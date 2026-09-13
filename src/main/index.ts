@@ -16,8 +16,8 @@ import {
 import { pasteIntoPreviousApp } from "./services/paste";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const settings = new Store<{ shortcut: string; mode: TwinMode; position?: { x: number; y: number } }>({
-  defaults: { shortcut: "Alt+Space", mode: "dictate" },
+const settings = new Store<{ shortcut: string; mode: TwinMode; onboardingComplete: boolean; position?: { x: number; y: number } }>({
+  defaults: { shortcut: "Alt+Space", mode: "dictate", onboardingComplete: false },
 });
 const credentials = new Store<{ assemblyAI?: string; openAI?: string; composio?: string }>({ name: "credentials" });
 const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
@@ -43,6 +43,7 @@ function getStatus(): AppStatus {
       composio: Boolean(process.env.COMPOSIO_API_KEY),
     },
     shortcut: settings.get("shortcut"),
+    onboardingComplete: settings.get("onboardingComplete"),
   };
 }
 
@@ -176,6 +177,11 @@ function registerShortcut() {
 function registerIpc() {
   ipcMain.handle("twin:status", getStatus);
   ipcMain.handle("twin:save-credentials", (_event, input: CredentialInput) => saveCredentials(input));
+  ipcMain.handle("twin:complete-onboarding", () => {
+    if (!process.env.ASSEMBLYAI_API_KEY) throw new Error("Add an AssemblyAI API key before finishing setup");
+    settings.set("onboardingComplete", true);
+    return getStatus();
+  });
 
   ipcMain.handle("twin:hide", () => window?.hide());
   ipcMain.handle("twin:mouse-passthrough", (_event, passthrough: boolean) => {

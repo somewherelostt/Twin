@@ -10,6 +10,7 @@ export interface AppStatus {
     composio: boolean;
   };
   shortcut: string;
+  onboardingComplete: boolean;
 }
 
 export interface CredentialInput {
@@ -69,6 +70,7 @@ export interface ActionProgress {
 export interface TwinBridge {
   getStatus(): Promise<AppStatus>;
   saveCredentials(input: CredentialInput): Promise<AppStatus>;
+  completeOnboarding(): Promise<AppStatus>;
   hide(): Promise<void>;
   setMousePassthrough(passthrough: boolean): Promise<void>;
   setOverlayHeight(height: number): Promise<void>;

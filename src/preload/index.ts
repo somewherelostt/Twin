@@ -4,6 +4,7 @@ import type { Toolkit, TwinBridge, TwinMode } from "../shared/contracts";
 const bridge: TwinBridge = {
   getStatus: () => ipcRenderer.invoke("twin:status"),
   saveCredentials: (input) => ipcRenderer.invoke("twin:save-credentials", input),
+  completeOnboarding: () => ipcRenderer.invoke("twin:complete-onboarding"),
   hide: () => ipcRenderer.invoke("twin:hide"),
   setMousePassthrough: (passthrough) => ipcRenderer.invoke("twin:mouse-passthrough", passthrough),
   setOverlayHeight: (height) => ipcRenderer.invoke("twin:set-overlay-height", height),

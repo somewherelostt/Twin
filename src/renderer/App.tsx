@@ -58,6 +58,8 @@ export function App() {
   const [copied, setCopied] = useState(false);
   const [showModes, setShowModes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const [executionMessage, setExecutionMessage] = useState("");
   const [credentialInput, setCredentialInput] = useState({ assemblyAI: "", openAI: "", composio: "" });
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +72,10 @@ export function App() {
   }
 
   useEffect(() => {
-    void window.twin.getStatus().then(setStatus);
+    void window.twin.getStatus().then((nextStatus) => {
+      setStatus(nextStatus);
+      setShowOnboarding(!nextStatus.onboardingComplete);
+    });
     const stopActivated = window.twin.onActivated(() => {
       setError("");
       setTimeout(() => inputRef.current?.focus(), 80);
@@ -106,7 +111,8 @@ export function App() {
         const bottom = Math.max(...rects.map((rect) => rect.bottom));
         const panel = document.querySelector<HTMLElement>(".settings-panel");
         const measuredHeight = bottom - top + 2;
-        const settingsHeight = panel ? panel.scrollHeight + 69 : 0;
+        const panelOffset = panel?.closest(".onboarding-backdrop") ? 2 : 69;
+        const settingsHeight = panel ? panel.scrollHeight + panelOffset : 0;
         void window.twin.setOverlayHeight(Math.ceil(Math.max(measuredHeight, settingsHeight)));
       });
     };
@@ -117,7 +123,7 @@ export function App() {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [hasContent, showModes, showSettings]);
+  }, [hasContent, showModes, showSettings, showOnboarding, onboardingStep]);
 
   async function refreshConnections(force = false) {
     if (!force && !status?.configured.composio) return;
@@ -252,10 +258,26 @@ export function App() {
       const nextStatus = await window.twin.saveCredentials(credentialInput);
       setStatus(nextStatus);
       setCredentialInput({ assemblyAI: "", openAI: "", composio: "" });
-      setShowSettings(false);
+      if (showOnboarding) setOnboardingStep(2);
+      else setShowSettings(false);
       if (nextStatus.configured.composio) void refreshConnections(true);
     } catch (cause) {
       setError(friendlyError(cause, "Could not save credentials"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function finishOnboarding() {
+    setBusy(true);
+    setError("");
+    try {
+      const nextStatus = await window.twin.completeOnboarding();
+      setStatus(nextStatus);
+      setShowOnboarding(false);
+      setOnboardingStep(0);
+    } catch (cause) {
+      setError(friendlyError(cause, "Could not finish setup"));
     } finally {
       setBusy(false);
     }
@@ -266,7 +288,7 @@ export function App() {
       className={`stage ${hasContent ? "expanded" : "compact"}`}
       onMouseMove={(event) => updateMousePassthrough(event.target)}
     >
-      <section className="float-stack">
+      {!showOnboarding && <section className="float-stack">
         {showModes && (
           <div className="mode-popover surface-enter">
             <button className={mode === "act" ? "active" : ""} onClick={() => chooseMode("act")}>
@@ -338,12 +360,52 @@ export function App() {
           {draft.trim() && !recorder.recording ? <button className="send-button" aria-label="Send"><Send size={15} /></button> : <button type="button" className="mic-button" onClick={toggleRecording} aria-label={recorder.recording ? "Stop recording" : "Start recording"}><Mic size={18} /></button>}
           <button type="button" className="settings-button" onClick={() => { setShowModes(false); setShowSettings(true); void refreshConnections(); }} aria-label="Settings"><Settings2 size={15} /></button>
         </form>
-      </section>
+      </section>}
 
-      {showSettings && (
+      {showOnboarding && (
+        <div className="settings-backdrop onboarding-backdrop surface-enter">
+          <section className="settings-panel onboarding-panel">
+            {onboardingStep === 0 ? (
+              <div className="welcome-step">
+                <img src="./twin-mark.svg" alt="Twin" />
+                <span className="kicker">WELCOME TO TWIN</span>
+                <h1>Your voice, ready for work.</h1>
+                <p>Set up dictation and your work apps once. Twin will remember everything securely on this computer.</p>
+                <button type="button" className="save-button onboarding-action" onClick={() => setOnboardingStep(1)}>Set up Twin <ArrowRight size={14} /></button>
+              </div>
+            ) : onboardingStep === 1 ? (
+              <form onSubmit={saveCredentials}>
+                <div className="settings-head"><div className="key-icon"><KeyRound size={17} /></div><div><span className="kicker">STEP 1 OF 2</span><h2>Add your services</h2></div></div>
+                <p>Keys are encrypted by your operating system and never leave this computer except when calling their service.</p>
+                <div className="onboarding-key-grid">
+                  <label><span><strong>AssemblyAI</strong><small>Voice dictation · Required</small></span><em className={status?.configured.assemblyAI ? "ready" : ""}>{status?.configured.assemblyAI ? "Ready" : "Add key"}</em><input type="password" placeholder={status?.configured.assemblyAI ? "Already configured" : "Paste API key"} value={credentialInput.assemblyAI} onChange={(event) => setCredentialInput({ ...credentialInput, assemblyAI: event.target.value })} /></label>
+                  <label><span><strong>OpenAI</strong><small>Planning work actions</small></span><em className={status?.configured.openAI ? "ready" : ""}>{status?.configured.openAI ? "Ready" : "Add key"}</em><input type="password" placeholder={status?.configured.openAI ? "Already configured" : "Paste API key"} value={credentialInput.openAI} onChange={(event) => setCredentialInput({ ...credentialInput, openAI: event.target.value })} /></label>
+                  <label><span><strong>Composio</strong><small>Connecting your apps</small></span><em className={status?.configured.composio ? "ready" : ""}>{status?.configured.composio ? "Ready" : "Add key"}</em><input type="password" placeholder={status?.configured.composio ? "Already configured" : "Paste API key"} value={credentialInput.composio} onChange={(event) => setCredentialInput({ ...credentialInput, composio: event.target.value })} /></label>
+                </div>
+                <button className="save-button onboarding-action" disabled={busy || !(
+                  (status?.configured.assemblyAI || credentialInput.assemblyAI.trim())
+                  && (status?.configured.openAI || credentialInput.openAI.trim())
+                  && (status?.configured.composio || credentialInput.composio.trim())
+                )}>{busy ? <LoaderCircle className="spin" size={14} /> : <ArrowRight size={14} />} Save and continue</button>
+                {error && <div className="settings-error">{error}</div>}
+              </form>
+            ) : (
+              <div>
+                <div className="settings-head"><div className="key-icon"><Plug size={17} /></div><div><span className="kicker">STEP 2 OF 2</span><h2>Connect your work apps</h2></div></div>
+                <p>Connect the apps you use now. You can add or change them later from Settings.</p>
+                <div className="connections onboarding-connections">{connections.map((connection) => <button type="button" key={connection.slug} className={connection.connected ? "connected" : ""} disabled={!status?.configured.composio || connecting !== null || connection.connected} onClick={() => connect(connection.slug)}><i className={connection.slug}>{toolkitNames[connection.slug][0]}</i><span>{toolkitNames[connection.slug]}<small>{connection.connected ? "Connected" : status?.configured.composio ? "Connect" : "Needs Composio"}</small></span>{connection.connected ? <CheckCircle2 size={14} /> : connecting === connection.slug ? <LoaderCircle className="spin" size={14} /> : <Plug size={14} />}</button>)}</div>
+                <button type="button" className="save-button onboarding-action" disabled={busy} onClick={() => void finishOnboarding()}>{busy ? <LoaderCircle className="spin" size={14} /> : <Check size={14} />} Finish setup</button>
+                {error && <div className="settings-error">{error}</div>}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {showSettings && !showOnboarding && (
         <div className="settings-backdrop surface-enter">
           <form className="settings-panel" onSubmit={saveCredentials}>
-            <div className="settings-head"><div className="key-icon"><KeyRound size={17} /></div><div><span className="kicker">LOCAL SETUP</span><h2>Connect Twin</h2></div><button type="button" className="icon-action" onClick={() => setShowSettings(false)}><X size={16} /></button></div>
+            <div className="settings-head"><div className="key-icon"><KeyRound size={17} /></div><div><span className="kicker">TWIN SETTINGS</span><h2>Accounts & apps</h2></div><button type="button" className="icon-action" onClick={() => setShowSettings(false)}><X size={16} /></button></div>
             <p>Credentials are encrypted by your operating system and stay on this computer.</p>
             <div className="key-grid">
               <label>AssemblyAI <span className={status?.configured.assemblyAI ? "ready" : ""}>{status?.configured.assemblyAI ? "Ready" : "Required"}</span><input type="password" placeholder={status?.configured.assemblyAI ? "Replace existing key" : "Paste API key"} value={credentialInput.assemblyAI} onChange={(event) => setCredentialInput({ ...credentialInput, assemblyAI: event.target.value })} /></label>

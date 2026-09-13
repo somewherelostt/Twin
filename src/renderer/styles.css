@@ -131,6 +131,24 @@ button { color: inherit; }
 .connections button.connected { border-color: rgba(215,255,78,.2); }
 .connections button.connected small { color: #98ad50; }
 .settings-error { margin-top: 9px; color: #ff9f98; font-size: 10px; }
+.onboarding-backdrop { padding-bottom: 0; }
+.onboarding-panel { width: min(540px, 100%); padding: 24px; }
+.welcome-step { padding: 10px 8px 4px; text-align: center; }
+.welcome-step > img { width: 58px; height: 58px; margin-bottom: 17px; border-radius: 18px; }
+.welcome-step h1 { margin: 8px 0 9px; font-size: 27px; line-height: 1.1; letter-spacing: -.04em; }
+.welcome-step p { max-width: 390px; margin: 0 auto; color: #858980; font-size: 12px; line-height: 1.55; }
+.onboarding-action { min-height: 40px; margin-top: 20px; }
+.onboarding-key-grid { display: grid; gap: 8px; }
+.onboarding-key-grid label { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.07); border-radius: 12px; background: rgba(255,255,255,.025); }
+.onboarding-key-grid label > span strong, .onboarding-key-grid label > span small { display: block; }
+.onboarding-key-grid label > span strong { color: #d7d9d2; font-size: 11px; }
+.onboarding-key-grid label > span small { margin-top: 2px; color: #696d65; font-size: 8px; font-weight: 400; }
+.onboarding-key-grid em { color: #777b72; font: 8px "DM Mono", monospace; font-style: normal; }
+.onboarding-key-grid em.ready { color: #a8c055; }
+.onboarding-key-grid input { grid-column: 1 / -1; width: 100%; margin-top: 5px; padding: 9px 10px; color: #eff0eb; border: 1px solid rgba(255,255,255,.08); border-radius: 9px; outline: 0; background: #0e0f0d; font: 9px "DM Mono", monospace; }
+.onboarding-key-grid input:focus { border-color: rgba(215,255,78,.42); }
+.onboarding-connections { grid-template-columns: repeat(2, 1fr); margin-top: 13px; }
+.onboarding-connections button { padding: 11px; }
 .spin { animation: spin 900ms linear infinite; }
 
 @keyframes surface-in { from { opacity: 0; transform: translateY(12px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
