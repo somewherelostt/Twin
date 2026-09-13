@@ -13,6 +13,7 @@ button, input, textarea { font: inherit; }
 button { color: inherit; }
 
 .stage { position: relative; width: 100%; height: 100%; padding: 0 18px; display: flex; align-items: flex-end; justify-content: center; background: transparent; }
+.stage.onboarding-mode { padding: 0; align-items: stretch; background: #11120f; }
 .float-stack { position: relative; width: min(590px, 100%); display: flex; flex-direction: column; align-items: stretch; gap: 9px; }
 
 .composer, .content-surface, .mode-popover, .settings-panel {
@@ -132,6 +133,9 @@ button { color: inherit; }
 .connections button.connected small { color: #98ad50; }
 .settings-error { margin-top: 9px; color: #ff9f98; font-size: 10px; }
 .onboarding-shell { position: relative; width: 100%; height: 600px; display: grid; grid-template-columns: 305px minmax(0, 1fr); overflow: hidden; color: #f2f3ee; border: 1px solid rgba(255,255,255,.12); border-radius: 28px; background: #11120f; box-shadow: 0 34px 90px rgba(8,9,6,.48), inset 0 1px 0 rgba(255,255,255,.04); font-family: "Outfit", sans-serif; cursor: grab; -webkit-app-region: drag; }
+.onboarding-mode .onboarding-shell { height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.onboarding-mode .onboarding-aside { padding-top: 45px; }
+.onboarding-mode .onboarding-main { padding-top: 44px; }
 .onboarding-shell:active { cursor: grabbing; }
 .onboarding-shell button, .onboarding-shell input, .onboarding-shell label { -webkit-app-region: no-drag; }
 .onboarding-shell input { cursor: text; }

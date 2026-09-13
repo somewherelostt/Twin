@@ -100,10 +100,6 @@ export function App() {
   );
   const hasContent = Boolean(result || plan || actionResult || recorder.recording || busy || error);
 
-  useEffect(() => {
-    void window.twin.setOnboardingWindow(showOnboarding);
-  }, [showOnboarding]);
-
   useLayoutEffect(() => {
     let frame = 0;
     const measure = () => {
@@ -290,7 +286,7 @@ export function App() {
 
   return (
     <main
-      className={`stage ${hasContent ? "expanded" : "compact"}`}
+      className={`stage ${showOnboarding ? "onboarding-mode" : hasContent ? "expanded" : "compact"}`}
       onMouseMove={(event) => updateMousePassthrough(event.target)}
     >
       {!showOnboarding && <section className="float-stack">

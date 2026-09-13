@@ -24,8 +24,7 @@ const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
 
 let window: BrowserWindow | null = null;
 let screenContext: string | undefined;
-let compactPositionBeforeOnboarding: { x: number; y: number } | undefined;
-let ignorePositionEventsUntil = 0;
+let windowIsOnboarding = false;
 
 configureIntegrations({
   getSessionId: () => runtime.get("composioSessionId"),
@@ -100,18 +99,26 @@ async function captureScreenContext(display = screen.getDisplayNearestPoint(scre
   }
 }
 
-function createWindow() {
+function createWindow(onboarding = !settings.get("onboardingComplete")): BrowserWindow {
+  windowIsOnboarding = onboarding;
   window = new BrowserWindow({
-    width: 660,
-    height: 600,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
+    width: onboarding ? 920 : 660,
+    height: onboarding ? 650 : 72,
+    frame: onboarding,
+    transparent: !onboarding,
+    alwaysOnTop: !onboarding,
     icon: path.join(currentDir, "../assets/twin-icon.png"),
     show: false,
-    resizable: false,
-    hasShadow: false,
-    backgroundColor: "#00000000",
+    resizable: onboarding,
+    hasShadow: onboarding,
+    skipTaskbar: !onboarding,
+    backgroundColor: onboarding ? "#11120f" : "#00000000",
+    ...(onboarding ? {
+      titleBarStyle: "hidden" as const,
+      titleBarOverlay: { color: "#11120f", symbolColor: "#73776e", height: 36 },
+      minWidth: 760,
+      minHeight: 560,
+    } : {}),
     webPreferences: {
       preload: path.join(currentDir, "index.mjs"),
       contextIsolation: true,
@@ -120,14 +127,15 @@ function createWindow() {
     },
   });
 
-  window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  window.setVisibleOnAllWorkspaces(!onboarding, { visibleOnFullScreen: !onboarding });
+  if (onboarding) window.center();
   window.on("moved", () => {
-    if (!window || Date.now() < ignorePositionEventsUntil) return;
+    if (!window || windowIsOnboarding) return;
     const [x, y] = window.getPosition();
     settings.set("position", { x, y });
   });
   window.webContents.on("before-input-event", (_event, input) => {
-    if (input.type === "keyDown" && input.key === "Escape") window?.hide();
+    if (!windowIsOnboarding && input.type === "keyDown" && input.key === "Escape") window?.hide();
   });
 
   if (process.env.VITE_DEV_SERVER_URL) {
@@ -135,10 +143,18 @@ function createWindow() {
   } else {
     void window.loadFile(path.join(currentDir, "../../dist/index.html"));
   }
+  return window;
 }
 
 async function toggleWindow() {
   if (!window) return;
+  if (windowIsOnboarding) {
+    if (window.isMinimized()) window.restore();
+    window.show();
+    window.focus();
+    window.setIgnoreMouseEvents(false);
+    return;
+  }
   if (window.isVisible()) {
     window.hide();
     return;
@@ -167,6 +183,13 @@ async function toggleWindow() {
   window.webContents.send("twin:activated");
 }
 
+function replaceOnboardingWithOverlay() {
+  const previousWindow = window;
+  const overlay = createWindow(false);
+  previousWindow?.destroy();
+  overlay.webContents.once("did-finish-load", () => void toggleWindow());
+}
+
 function registerShortcut() {
   globalShortcut.unregisterAll();
   const shortcut = settings.get("shortcut");
@@ -182,6 +205,7 @@ function registerIpc() {
   ipcMain.handle("twin:complete-onboarding", () => {
     if (!process.env.ASSEMBLYAI_API_KEY) throw new Error("Add an AssemblyAI API key before finishing setup");
     settings.set("onboardingComplete", true);
+    setTimeout(replaceOnboardingWithOverlay, 180);
     return getStatus();
   });
 
@@ -190,7 +214,7 @@ function registerIpc() {
     window?.setIgnoreMouseEvents(Boolean(passthrough), { forward: true });
   });
   ipcMain.handle("twin:set-overlay-height", (_event, height: number) => {
-    if (!window || !Number.isFinite(height)) return;
+    if (!window || windowIsOnboarding || !Number.isFinite(height)) return;
     const nextHeight = Math.max(72, Math.min(640, Math.round(height)));
     const bounds = window.getBounds();
     if (Math.abs(bounds.height - nextHeight) < 2) return;
@@ -201,34 +225,6 @@ function registerIpc() {
       Math.min(desiredY, display.workArea.y + display.workArea.height - nextHeight),
     );
     window.setBounds({ ...bounds, y: nextY, height: nextHeight }, false);
-  });
-  ipcMain.handle("twin:set-onboarding-window", (_event, enabled: boolean) => {
-    if (!window) return;
-    const bounds = window.getBounds();
-    const display = screen.getDisplayMatching(bounds);
-    ignorePositionEventsUntil = Date.now() + 600;
-    if (enabled) {
-      compactPositionBeforeOnboarding = { x: bounds.x, y: bounds.y };
-      const width = Math.min(880, display.workArea.width - 32);
-      const height = Math.min(602, display.workArea.height - 32);
-      window.setBounds({
-        x: Math.round(display.workArea.x + (display.workArea.width - width) / 2),
-        y: Math.round(display.workArea.y + (display.workArea.height - height) / 2),
-        width,
-        height,
-      }, false);
-      return;
-    }
-    const width = 660;
-    const height = 72;
-    const position = compactPositionBeforeOnboarding;
-    compactPositionBeforeOnboarding = undefined;
-    window.setBounds({
-      x: position?.x ?? Math.round(display.workArea.x + (display.workArea.width - width) / 2),
-      y: position?.y ?? display.workArea.y + display.workArea.height - height - 22,
-      width,
-      height,
-    }, false);
   });
   ipcMain.handle("twin:set-mode", (_event, mode: TwinMode) => settings.set("mode", mode));
 
