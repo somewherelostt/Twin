@@ -69,6 +69,24 @@ export function App() {
     void window.twin.setMousePassthrough(!interactive);
   }
 
+  function beginWindowDrag(event: React.PointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    void window.twin.beginWindowDrag();
+  }
+
+  function moveWindowDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    void window.twin.moveWindowDrag();
+  }
+
+  function endWindowDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    void window.twin.endWindowDrag();
+  }
+
   useEffect(() => {
     void window.twin.getStatus().then(setStatus);
     const stopActivated = window.twin.onActivated(() => {
@@ -240,7 +258,6 @@ export function App() {
     <main
       className={`stage ${hasContent ? "expanded" : "compact"}`}
       onMouseMove={(event) => updateMousePassthrough(event.target)}
-      onMouseLeave={() => void window.twin.setMousePassthrough(true)}
     >
       <section className="float-stack">
         {showModes && (
@@ -300,7 +317,16 @@ export function App() {
         )}
 
         <form className={`composer ${recorder.recording ? "recording" : ""}`} onSubmit={submitDraft}>
-          <div className="drag-handle" title="Drag Twin" aria-hidden="true"><GripHorizontal size={18} /></div>
+          <div
+            className="drag-handle"
+            title="Drag Twin"
+            aria-label="Drag Twin"
+            role="button"
+            onPointerDown={beginWindowDrag}
+            onPointerMove={moveWindowDrag}
+            onPointerUp={endWindowDrag}
+            onPointerCancel={endWindowDrag}
+          ><GripHorizontal size={18} /></div>
           <button type="button" className="twin-orb" onClick={() => setShowModes(!showModes)} aria-label="Choose mode"><img src="./twin-mark.svg" alt="" /><ChevronDown size={10} /></button>
           <span className="mode-label">{mode === "act" ? "Act" : "Dictate"}</span>
           <input ref={inputRef} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={recorder.recording ? "Listening…" : mode === "act" ? "Tell Twin what to do" : "Speak or type anywhere"} disabled={recorder.recording || busy} />

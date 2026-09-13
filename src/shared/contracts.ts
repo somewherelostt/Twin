@@ -71,6 +71,9 @@ export interface TwinBridge {
   saveCredentials(input: CredentialInput): Promise<AppStatus>;
   hide(): Promise<void>;
   setMousePassthrough(passthrough: boolean): Promise<void>;
+  beginWindowDrag(): Promise<void>;
+  moveWindowDrag(): Promise<void>;
+  endWindowDrag(): Promise<void>;
   setMode(mode: TwinMode): Promise<void>;
   getConnections(): Promise<ToolkitConnection[]>;
   connect(toolkit: Toolkit): Promise<{ redirectUrl: string }>;

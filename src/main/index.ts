@@ -24,6 +24,7 @@ const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
 
 let window: BrowserWindow | null = null;
 let screenContext: string | undefined;
+let windowDragOffset: { x: number; y: number } | undefined;
 
 configureIntegrations({
   getSessionId: () => runtime.get("composioSessionId"),
@@ -180,6 +181,21 @@ function registerIpc() {
   ipcMain.handle("twin:hide", () => window?.hide());
   ipcMain.handle("twin:mouse-passthrough", (_event, passthrough: boolean) => {
     window?.setIgnoreMouseEvents(Boolean(passthrough), { forward: true });
+  });
+  ipcMain.handle("twin:begin-window-drag", () => {
+    if (!window) return;
+    const cursor = screen.getCursorScreenPoint();
+    const [x, y] = window.getPosition();
+    windowDragOffset = { x: cursor.x - x, y: cursor.y - y };
+    window.setIgnoreMouseEvents(false);
+  });
+  ipcMain.handle("twin:move-window-drag", () => {
+    if (!window || !windowDragOffset) return;
+    const cursor = screen.getCursorScreenPoint();
+    window.setPosition(cursor.x - windowDragOffset.x, cursor.y - windowDragOffset.y);
+  });
+  ipcMain.handle("twin:end-window-drag", () => {
+    windowDragOffset = undefined;
   });
   ipcMain.handle("twin:set-mode", (_event, mode: TwinMode) => settings.set("mode", mode));
 
