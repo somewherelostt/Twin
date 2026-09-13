@@ -64,9 +64,8 @@ function saveCredentials(input: CredentialInput) {
   return getStatus();
 }
 
-async function captureScreenContext() {
+async function captureScreenContext(display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())) {
   try {
-    const display = screen.getPrimaryDisplay();
     const ratio = Math.min(1, 1440 / display.size.width);
     const sources = await desktopCapturer.getSources({
       types: ["screen"],
@@ -84,15 +83,14 @@ async function captureScreenContext() {
 
 function createWindow() {
   window = new BrowserWindow({
-    width: 720,
-    height: 540,
-    minWidth: 620,
-    minHeight: 440,
+    width: 660,
+    height: 600,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     show: false,
-    resizable: true,
+    resizable: false,
+    hasShadow: false,
     backgroundColor: "#00000000",
     webPreferences: {
       preload: path.join(currentDir, "index.mjs"),
@@ -103,7 +101,9 @@ function createWindow() {
   });
 
   window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  window.on("blur", () => window?.hide());
+  window.webContents.on("before-input-event", (_event, input) => {
+    if (input.type === "keyDown" && input.key === "Escape") window?.hide();
+  });
 
   if (process.env.VITE_DEV_SERVER_URL) {
     void window.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -118,8 +118,13 @@ async function toggleWindow() {
     window.hide();
     return;
   }
-  await captureScreenContext();
-  window.center();
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  await captureScreenContext(display);
+  const [width, height] = window.getSize();
+  window.setPosition(
+    Math.round(display.workArea.x + (display.workArea.width - width) / 2),
+    display.workArea.y + display.workArea.height - height - 22,
+  );
   window.show();
   window.focus();
   window.webContents.send("twin:activated");
