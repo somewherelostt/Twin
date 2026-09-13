@@ -16,7 +16,7 @@ import {
 import { pasteIntoPreviousApp } from "./services/paste";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const settings = new Store<{ shortcut: string; mode: TwinMode }>({
+const settings = new Store<{ shortcut: string; mode: TwinMode; position?: { x: number; y: number } }>({
   defaults: { shortcut: "Alt+Space", mode: "dictate" },
 });
 const credentials = new Store<{ assemblyAI?: string; openAI?: string; composio?: string }>({ name: "credentials" });
@@ -117,6 +117,11 @@ function createWindow() {
   });
 
   window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  window.on("moved", () => {
+    if (!window) return;
+    const [x, y] = window.getPosition();
+    settings.set("position", { x, y });
+  });
   window.webContents.on("before-input-event", (_event, input) => {
     if (input.type === "keyDown" && input.key === "Escape") window?.hide();
   });
@@ -137,10 +142,21 @@ async function toggleWindow() {
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   await captureScreenContext(display);
   const [width, height] = window.getSize();
-  window.setPosition(
-    Math.round(display.workArea.x + (display.workArea.width - width) / 2),
-    display.workArea.y + display.workArea.height - height - 22,
+  const savedPosition = settings.get("position");
+  const savedPositionIsVisible = savedPosition && screen.getAllDisplays().some(({ workArea }) =>
+    savedPosition.x < workArea.x + workArea.width - 80
+    && savedPosition.x + width > workArea.x + 80
+    && savedPosition.y < workArea.y + workArea.height - 48
+    && savedPosition.y + height > workArea.y + 48,
   );
+  if (savedPositionIsVisible) {
+    window.setPosition(savedPosition.x, savedPosition.y);
+  } else {
+    window.setPosition(
+      Math.round(display.workArea.x + (display.workArea.width - width) / 2),
+      display.workArea.y + display.workArea.height - height - 22,
+    );
+  }
   window.show();
   window.focus();
   window.setIgnoreMouseEvents(true, { forward: true });
