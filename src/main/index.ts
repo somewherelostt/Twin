@@ -23,9 +23,9 @@ let window: BrowserWindow | null = null;
 function createWindow() {
   window = new BrowserWindow({
     width: 720,
-    height: 460,
+    height: 540,
     minWidth: 620,
-    minHeight: 360,
+    minHeight: 440,
     frame: false,
     transparent: true,
     alwaysOnTop: true,

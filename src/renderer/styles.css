@@ -47,10 +47,13 @@ button { font: inherit; }
 .icon-button { -webkit-app-region: no-drag; display: grid; place-items: center; width: 30px; height: 30px; color: #9b9e95; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
 .icon-button:hover { color: #fff; background: rgba(255, 255, 255, .08); }
 
-.workspace { height: calc(100% - 58px); padding: 28px; display: flex; flex-direction: column; }
+.workspace { height: calc(100% - 58px); padding: 26px 28px; display: flex; flex-direction: column; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; }
 .mode-switch { display: inline-flex; align-self: flex-start; gap: 4px; padding: 4px; border: 1px solid rgba(255,255,255,.08); border-radius: 11px; background: #181a17; }
 .mode-switch button { display: flex; align-items: center; gap: 7px; padding: 8px 13px; color: #81847c; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
 .mode-switch button.active { color: #f8f8f3; background: #2a2c27; box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+.refresh-button { display: flex; align-items: center; gap: 6px; color: #82857d; border: 0; background: transparent; font-size: 11px; cursor: pointer; }
+.refresh-button:hover { color: #f4f3ed; }
 
 .prompt { margin: auto 0; max-width: 520px; }
 .eyebrow { color: #d9ff57; font: 500 10px "DM Mono", monospace; letter-spacing: .14em; }
@@ -77,6 +80,31 @@ button { font: inherit; }
 .result-actions button { display: flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 9px; cursor: pointer; }
 .secondary { color: #d2d3cd; border: 1px solid rgba(255,255,255,.1); background: #1b1d19; }
 .primary { color: #10110f; border: 1px solid #d9ff57; background: #d9ff57; font-weight: 700; }
+.primary:disabled { opacity: .45; cursor: not-allowed; }
+
+.connections { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 0 0 14px; }
+.connections button { min-width: 0; display: flex; align-items: center; gap: 8px; padding: 9px; color: #aaada5; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: #171815; text-align: left; cursor: pointer; }
+.connections button:disabled { cursor: default; }
+.connections button > span:nth-child(2) { min-width: 0; flex: 1; font-size: 11px; font-weight: 600; }
+.connections small { display: block; margin-top: 1px; color: #6f726a; font: 9px "DM Mono", monospace; font-weight: 400; }
+.connections button.connected { color: #eef0e8; border-color: rgba(217,255,87,.22); }
+.connections button.connected small { color: #a6bd55; }
+.app-glyph { flex: 0 0 auto; width: 23px; height: 23px; display: grid; place-items: center; border-radius: 6px; color: #121310; background: #d7d9d1; font-size: 10px; font-weight: 800; }
+.app-glyph.slack { background: #e6b5da; }
+.app-glyph.jira { background: #9fbfff; }
+.app-glyph.gmail { background: #ffb1a9; }
+
+.action-card { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; max-width: 570px; padding-top: 18px; }
+.action-card-head { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+.action-icon { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; color: #10110f; background: #d9ff57; font-weight: 800; }
+.action-icon.success { color: #d9ff57; background: rgba(217,255,87,.1); }
+.action-card h2 { margin: 5px 0 0; font-size: 23px; letter-spacing: -.035em; }
+.action-card > p { margin: 0 0 18px; color: #a2a59c; font-size: 14px; line-height: 1.6; }
+.effect { padding: 12px 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; color: #ddded8; background: #171815; font-size: 12px; line-height: 1.5; }
+.effect span { display: block; margin-bottom: 3px; color: #757870; font: 9px "DM Mono", monospace; letter-spacing: .1em; text-transform: uppercase; }
+.success-card { align-items: flex-start; }
+.success-card .action-icon { margin-bottom: 18px; }
+.new-action { padding: 9px 13px; border-radius: 9px; cursor: pointer; }
 
 @keyframes pulse { 50% { opacity: .35; transform: scale(.72); } }
 @keyframes spin { to { transform: rotate(360deg); } }
