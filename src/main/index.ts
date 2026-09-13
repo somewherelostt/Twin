@@ -143,6 +143,7 @@ async function toggleWindow() {
   );
   window.show();
   window.focus();
+  window.setIgnoreMouseEvents(true, { forward: true });
   window.webContents.send("twin:activated");
 }
 
@@ -160,6 +161,9 @@ function registerIpc() {
   ipcMain.handle("twin:save-credentials", (_event, input: CredentialInput) => saveCredentials(input));
 
   ipcMain.handle("twin:hide", () => window?.hide());
+  ipcMain.handle("twin:mouse-passthrough", (_event, passthrough: boolean) => {
+    window?.setIgnoreMouseEvents(Boolean(passthrough), { forward: true });
+  });
   ipcMain.handle("twin:set-mode", (_event, mode: TwinMode) => settings.set("mode", mode));
 
   ipcMain.handle("twin:transcribe", (_event, request) =>

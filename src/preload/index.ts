@@ -5,6 +5,7 @@ const bridge: TwinBridge = {
   getStatus: () => ipcRenderer.invoke("twin:status"),
   saveCredentials: (input) => ipcRenderer.invoke("twin:save-credentials", input),
   hide: () => ipcRenderer.invoke("twin:hide"),
+  setMousePassthrough: (passthrough) => ipcRenderer.invoke("twin:mouse-passthrough", passthrough),
   setMode: (mode: TwinMode) => ipcRenderer.invoke("twin:set-mode", mode),
   getConnections: () => ipcRenderer.invoke("twin:connections"),
   connect: (toolkit: Toolkit) => ipcRenderer.invoke("twin:connect", toolkit),

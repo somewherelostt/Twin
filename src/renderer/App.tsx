@@ -62,6 +62,12 @@ export function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const recorder = useAudioRecorder();
 
+  function updateMousePassthrough(target: EventTarget | null) {
+    const element = target instanceof Element ? target : null;
+    const interactive = Boolean(element?.closest(".float-stack, .settings-backdrop"));
+    void window.twin.setMousePassthrough(!interactive);
+  }
+
   useEffect(() => {
     void window.twin.getStatus().then(setStatus);
     const stopActivated = window.twin.onActivated(() => {
@@ -230,7 +236,11 @@ export function App() {
   }
 
   return (
-    <main className={`stage ${hasContent ? "expanded" : "compact"}`}>
+    <main
+      className={`stage ${hasContent ? "expanded" : "compact"}`}
+      onMouseMove={(event) => updateMousePassthrough(event.target)}
+      onMouseLeave={() => void window.twin.setMousePassthrough(true)}
+    >
       <section className="float-stack">
         {showModes && (
           <div className="mode-popover surface-enter">

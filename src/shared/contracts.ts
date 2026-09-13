@@ -70,6 +70,7 @@ export interface TwinBridge {
   getStatus(): Promise<AppStatus>;
   saveCredentials(input: CredentialInput): Promise<AppStatus>;
   hide(): Promise<void>;
+  setMousePassthrough(passthrough: boolean): Promise<void>;
   setMode(mode: TwinMode): Promise<void>;
   getConnections(): Promise<ToolkitConnection[]>;
   connect(toolkit: Toolkit): Promise<{ redirectUrl: string }>;
