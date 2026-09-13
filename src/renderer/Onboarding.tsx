@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   GitPullRequest,
+  GripHorizontal,
   KeyRound,
   LoaderCircle,
   LockKeyhole,
@@ -103,6 +104,7 @@ export function Onboarding({
 
   return (
     <section className="onboarding-shell">
+      <div className="onboarding-dragbar" title="Drag Twin" aria-label="Drag Twin"><GripHorizontal size={16} /></div>
       <OnboardingAside step={step} />
       <main className="onboarding-main">
         <StepProgress step={step} />

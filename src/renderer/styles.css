@@ -131,7 +131,15 @@ button { color: inherit; }
 .connections button.connected { border-color: rgba(215,255,78,.2); }
 .connections button.connected small { color: #98ad50; }
 .settings-error { margin-top: 9px; color: #ff9f98; font-size: 10px; }
-.onboarding-shell { position: relative; width: 100%; height: 600px; display: grid; grid-template-columns: 305px minmax(0, 1fr); overflow: hidden; color: #f2f3ee; border: 1px solid rgba(255,255,255,.12); border-radius: 28px; background: #11120f; box-shadow: 0 34px 90px rgba(8,9,6,.48), inset 0 1px 0 rgba(255,255,255,.04); font-family: "Outfit", sans-serif; -webkit-app-region: no-drag; }
+.onboarding-shell { position: relative; width: 100%; height: 600px; display: grid; grid-template-columns: 305px minmax(0, 1fr); overflow: hidden; color: #f2f3ee; border: 1px solid rgba(255,255,255,.12); border-radius: 28px; background: #11120f; box-shadow: 0 34px 90px rgba(8,9,6,.48), inset 0 1px 0 rgba(255,255,255,.04); font-family: "Outfit", sans-serif; cursor: grab; -webkit-app-region: drag; }
+.onboarding-shell:active { cursor: grabbing; }
+.onboarding-shell button, .onboarding-shell input, .onboarding-shell label { -webkit-app-region: no-drag; }
+.onboarding-shell input { cursor: text; }
+.onboarding-shell button { cursor: pointer; }
+.onboarding-dragbar { position: absolute; top: 7px; left: 50%; z-index: 8; width: 54px; height: 22px; display: grid; place-items: center; color: #52564e; border-radius: 8px; cursor: grab; transform: translateX(-50%); -webkit-app-region: drag; }
+.onboarding-dragbar:hover { color: #a8c055; background: rgba(255,255,255,.035); }
+.onboarding-dragbar:active { cursor: grabbing; }
+.onboarding-aside, .onboarding-brand, .signal-scene, .aside-copy, .privacy-note, .onboarding-progress, .onboarding-content > .eyebrow, .onboarding-content > h1, .onboarding-content > .lead { -webkit-app-region: drag; }
 .onboarding-shell::after { position: absolute; inset: 0; z-index: 3; pointer-events: none; content: ""; opacity: .22; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E"); mix-blend-mode: soft-light; }
 .onboarding-aside { position: relative; min-width: 0; overflow: hidden; padding: 30px 29px 26px; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,.08); background: radial-gradient(circle at 50% 33%, rgba(205,247,68,.13), transparent 31%), linear-gradient(150deg, #191b15, #0d0e0c 72%); }
 .onboarding-aside::before { position: absolute; inset: 0; content: ""; opacity: .22; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 25px 25px; mask-image: linear-gradient(to bottom, #000, transparent 70%); }
