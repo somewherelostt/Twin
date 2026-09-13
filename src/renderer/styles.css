@@ -105,7 +105,7 @@ button { color: inherit; }
 .mode-popover small { margin-top: 2px; color: #73766f; font-size: 9px; }
 .mode-popover button > svg:last-child { color: #d7ff4e; }
 
-.settings-backdrop { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 18px; background: rgba(4,5,4,.56); backdrop-filter: blur(10px); }
+.settings-backdrop { position: absolute; inset: 0; z-index: 10; display: grid; place-items: end center; padding: 18px 18px 86px; background: transparent; pointer-events: auto; }
 .settings-panel { width: min(520px, 100%); max-height: 100%; overflow: auto; padding: 20px; border-radius: 20px; }
 .settings-head { display: flex; align-items: center; gap: 11px; }
 .settings-head > div:nth-child(2) { flex: 1; }

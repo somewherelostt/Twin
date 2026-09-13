@@ -65,7 +65,7 @@ export function App() {
 
   function updateMousePassthrough(target: EventTarget | null) {
     const element = target instanceof Element ? target : null;
-    const interactive = Boolean(element?.closest(".float-stack, .settings-backdrop"));
+    const interactive = Boolean(element?.closest(".float-stack, .settings-panel"));
     void window.twin.setMousePassthrough(!interactive);
   }
 
