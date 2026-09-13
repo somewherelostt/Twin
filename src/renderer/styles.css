@@ -59,3 +59,24 @@ button { font: inherit; }
 
 .talk-button { align-self: flex-start; display: flex; align-items: center; gap: 9px; padding: 10px 14px; color: #777a72; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: #171815; }
 .pulse { width: 7px; height: 7px; border-radius: 999px; background: #696c64; }
+.talk-button:not(:disabled) { color: #10110f; background: #d9ff57; cursor: pointer; }
+.talk-button:not(:disabled) .pulse { background: #10110f; }
+.talk-button.recording { color: #fff; background: #eb4c48; border-color: #eb4c48; }
+.talk-button.recording .pulse { background: #fff; animation: pulse 1s infinite; }
+.meter { width: 220px; height: 4px; margin-top: 18px; overflow: hidden; border-radius: 99px; background: #282a26; }
+.meter span { display: block; height: 100%; border-radius: inherit; background: #d9ff57; transition: width 80ms linear; }
+.error { color: #ff8d89 !important; }
+.spin { animation: spin 1s linear infinite; }
+
+.result-panel { display: flex; flex: 1; min-height: 0; flex-direction: column; padding-top: 28px; }
+.result-panel textarea { flex: 1; width: 100%; min-height: 120px; margin: 12px 0 8px; padding: 0; resize: none; color: #f4f3ed; border: 0; outline: 0; background: transparent; font: 500 22px/1.5 "Manrope", sans-serif; letter-spacing: -.025em; }
+.result-panel details { color: #7f827a; font-size: 12px; }
+.result-panel summary { cursor: pointer; }
+.result-panel details p { margin: 8px 0 0; color: #969990; }
+.result-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.result-actions button { display: flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 9px; cursor: pointer; }
+.secondary { color: #d2d3cd; border: 1px solid rgba(255,255,255,.1); background: #1b1d19; }
+.primary { color: #10110f; border: 1px solid #d9ff57; background: #d9ff57; font-weight: 700; }
+
+@keyframes pulse { 50% { opacity: .35; transform: scale(.72); } }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -7,6 +7,8 @@ const bridge: TwinBridge = {
   setMode: (mode: TwinMode) => ipcRenderer.invoke("twin:set-mode", mode),
   getConnections: () => ipcRenderer.invoke("twin:connections"),
   connect: (toolkit: Toolkit) => ipcRenderer.invoke("twin:connect", toolkit),
+  transcribe: (request) => ipcRenderer.invoke("twin:transcribe", request),
+  paste: (text) => ipcRenderer.invoke("twin:paste", text),
   onActivated: (callback) => {
     const listener = () => callback();
     ipcRenderer.on("twin:activated", listener);

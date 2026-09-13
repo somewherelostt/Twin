@@ -10,3 +10,6 @@ release/
 *.tsbuildinfo
 /vite.config.js
 /vite.config.d.ts
+/src/**/*.js
+/src/**/*.d.ts
+!/src/renderer/global.d.ts

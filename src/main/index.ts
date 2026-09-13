@@ -4,6 +4,8 @@ import { app, BrowserWindow, globalShortcut, ipcMain, shell } from "electron";
 import Store from "electron-store";
 import "dotenv/config";
 import { TOOLKITS, type AppStatus, type Toolkit, type TwinMode } from "../shared/contracts";
+import { transcribeDictation } from "./services/dictation";
+import { pasteIntoPreviousApp } from "./services/paste";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const settings = new Store<{ shortcut: string; mode: TwinMode }>({
@@ -75,6 +77,15 @@ function registerIpc() {
 
   ipcMain.handle("twin:hide", () => window?.hide());
   ipcMain.handle("twin:set-mode", (_event, mode: TwinMode) => settings.set("mode", mode));
+
+  ipcMain.handle("twin:transcribe", (_event, request) =>
+    transcribeDictation(request, process.env.ASSEMBLYAI_API_KEY),
+  );
+
+  ipcMain.handle("twin:paste", async (_event, text: string) => {
+    window?.hide();
+    await pasteIntoPreviousApp(text);
+  });
 
   ipcMain.handle("twin:connections", async () =>
     TOOLKITS.map((slug) => ({ slug, connected: false })),

@@ -18,11 +18,25 @@ export interface ToolkitConnection {
   accountId?: string;
 }
 
+export interface DictationRequest {
+  audio: Uint8Array;
+  languageCodes: string[];
+  keyterms?: string[];
+}
+
+export interface DictationResult {
+  transcript: string;
+  cleanText: string;
+  durationMs: number;
+}
+
 export interface TwinBridge {
   getStatus(): Promise<AppStatus>;
   hide(): Promise<void>;
   setMode(mode: TwinMode): Promise<void>;
   getConnections(): Promise<ToolkitConnection[]>;
   connect(toolkit: Toolkit): Promise<{ redirectUrl: string }>;
+  transcribe(request: DictationRequest): Promise<DictationResult>;
+  paste(text: string): Promise<void>;
   onActivated(callback: () => void): () => void;
 }
