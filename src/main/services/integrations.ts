@@ -57,7 +57,9 @@ function isToolkit(value: unknown): value is Toolkit {
 function readPlan(value: unknown, command: string): ActionPlan {
   if (!value || typeof value !== "object") throw new Error("Twin could not understand that action");
   const data = value as Record<string, unknown>;
-  if (!isToolkit(data.toolkit)) throw new Error("That action is outside the connected apps");
+  if (!Array.isArray(data.toolkits) || !data.toolkits.length || !data.toolkits.every(isToolkit)) {
+    throw new Error("That action is outside the connected apps");
+  }
 
   const required = ["title", "description", "operation", "confirmation"] as const;
   for (const key of required) {
@@ -71,7 +73,7 @@ function readPlan(value: unknown, command: string): ActionPlan {
     command,
     title: String(data.title).trim(),
     description: String(data.description).trim(),
-    toolkit: data.toolkit,
+    toolkits: [...new Set(data.toolkits)],
     operation: String(data.operation).trim(),
     confirmation: String(data.confirmation).trim(),
   };
@@ -104,7 +106,7 @@ export async function prepareAction(command: string, screenContext?: string): Pr
   const response = await getOpenAI().responses.create({
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
     instructions:
-      "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose exactly one toolkit: slack, jira, gmail, or github. Do not execute anything. Return JSON only with title, description, toolkit, operation, and confirmation. Description must include the recipient, destination, repository, project, or channel when it is known. Confirmation must clearly state the external effect. Never invent missing names or content; mention missing details in the description.",
+      "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose every required toolkit from slack, jira, gmail, and github. Support workflows that move information between apps. Do not execute anything. Return JSON only with title, description, toolkits, operation, and confirmation. Description must include the recipient, destination, repository, project, or channel when it is known. Confirmation must clearly state every external effect. Never invent missing names or content; mention missing details in the description.",
     input: [{
       role: "user",
       content: [
@@ -123,11 +125,11 @@ export async function prepareAction(command: string, screenContext?: string): Pr
           properties: {
             title: { type: "string" },
             description: { type: "string" },
-            toolkit: { type: "string", enum: [...TOOLKITS] },
+            toolkits: { type: "array", items: { type: "string", enum: [...TOOLKITS] }, minItems: 1, uniqueItems: true },
             operation: { type: "string" },
             confirmation: { type: "string" },
           },
-          required: ["title", "description", "toolkit", "operation", "confirmation"],
+          required: ["title", "description", "toolkits", "operation", "confirmation"],
         },
       },
     },

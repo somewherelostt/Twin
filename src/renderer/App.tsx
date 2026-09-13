@@ -192,7 +192,7 @@ export function App() {
           </div>
         ) : mode === "act" && plan ? (
           <div className="action-card">
-            <div className="action-card-head"><div className="action-icon">{toolkitNames[plan.toolkit][0]}</div><div><span className="eyebrow">REVIEW ACTION</span><h2>{plan.title}</h2></div></div>
+            <div className="action-card-head"><div className="action-icon">{plan.toolkits.length}</div><div><span className="eyebrow">REVIEW · {plan.toolkits.map((toolkit) => toolkitNames[toolkit]).join(" + ")}</span><h2>{plan.title}</h2></div></div>
             <p>{plan.description}</p>
             <div className="effect"><span>Will happen</span>{plan.confirmation}</div>
             {error && <p className="error">{error}</p>}
