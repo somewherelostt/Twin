@@ -5,6 +5,12 @@ import Store from "electron-store";
 import "dotenv/config";
 import { TOOLKITS, type AppStatus, type Toolkit, type TwinMode } from "../shared/contracts";
 import { transcribeDictation } from "./services/dictation";
+import {
+  connectToolkit,
+  executeAction,
+  getConnections,
+  prepareAction,
+} from "./services/integrations";
 import { pasteIntoPreviousApp } from "./services/paste";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -87,15 +93,17 @@ function registerIpc() {
     await pasteIntoPreviousApp(text);
   });
 
-  ipcMain.handle("twin:connections", async () =>
-    TOOLKITS.map((slug) => ({ slug, connected: false })),
-  );
+  ipcMain.handle("twin:connections", () => getConnections());
 
   ipcMain.handle("twin:connect", async (_event, toolkit: Toolkit) => {
     if (!TOOLKITS.includes(toolkit)) throw new Error("Unsupported integration");
-    if (!process.env.COMPOSIO_API_KEY) throw new Error("Add COMPOSIO_API_KEY to connect apps");
-    throw new Error("Connection service is not initialized yet");
+    const connection = await connectToolkit(toolkit);
+    await shell.openExternal(connection.redirectUrl);
+    return connection;
   });
+
+  ipcMain.handle("twin:prepare-action", (_event, command: string) => prepareAction(command));
+  ipcMain.handle("twin:execute-action", (_event, planId: string) => executeAction(planId));
 
   ipcMain.handle("twin:open-external", async (_event, url: string) => {
     const parsed = new URL(url);

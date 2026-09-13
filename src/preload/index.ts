@@ -8,6 +8,8 @@ const bridge: TwinBridge = {
   getConnections: () => ipcRenderer.invoke("twin:connections"),
   connect: (toolkit: Toolkit) => ipcRenderer.invoke("twin:connect", toolkit),
   transcribe: (request) => ipcRenderer.invoke("twin:transcribe", request),
+  prepareAction: (command) => ipcRenderer.invoke("twin:prepare-action", command),
+  executeAction: (planId) => ipcRenderer.invoke("twin:execute-action", planId),
   paste: (text) => ipcRenderer.invoke("twin:paste", text),
   onActivated: (callback) => {
     const listener = () => callback();

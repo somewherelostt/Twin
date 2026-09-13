@@ -30,6 +30,21 @@ export interface DictationResult {
   durationMs: number;
 }
 
+export interface ActionPlan {
+  id: string;
+  command: string;
+  title: string;
+  description: string;
+  toolkit: Toolkit;
+  operation: string;
+  confirmation: string;
+}
+
+export interface ActionResult {
+  planId: string;
+  summary: string;
+}
+
 export interface TwinBridge {
   getStatus(): Promise<AppStatus>;
   hide(): Promise<void>;
@@ -37,6 +52,8 @@ export interface TwinBridge {
   getConnections(): Promise<ToolkitConnection[]>;
   connect(toolkit: Toolkit): Promise<{ redirectUrl: string }>;
   transcribe(request: DictationRequest): Promise<DictationResult>;
+  prepareAction(command: string): Promise<ActionPlan>;
+  executeAction(planId: string): Promise<ActionResult>;
   paste(text: string): Promise<void>;
   onActivated(callback: () => void): () => void;
 }
