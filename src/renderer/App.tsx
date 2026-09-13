@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   AlertCircle,
@@ -69,24 +69,6 @@ export function App() {
     void window.twin.setMousePassthrough(!interactive);
   }
 
-  function beginWindowDrag(event: React.PointerEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    void window.twin.beginWindowDrag();
-  }
-
-  function moveWindowDrag(event: React.PointerEvent<HTMLDivElement>) {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
-    void window.twin.moveWindowDrag();
-  }
-
-  function endWindowDrag(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    void window.twin.endWindowDrag();
-  }
-
   useEffect(() => {
     void window.twin.getStatus().then(setStatus);
     const stopActivated = window.twin.onActivated(() => {
@@ -111,6 +93,31 @@ export function App() {
     [mode, status],
   );
   const hasContent = Boolean(result || plan || actionResult || recorder.recording || busy || error);
+
+  useLayoutEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const elements = Array.from(document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .drag-handle, .mode-popover"));
+        const rects = elements.filter((element) => element.offsetParent !== null).map((element) => element.getBoundingClientRect());
+        if (rects.length === 0) return;
+        const top = Math.min(...rects.map((rect) => rect.top));
+        const bottom = Math.max(...rects.map((rect) => rect.bottom));
+        const panel = document.querySelector<HTMLElement>(".settings-panel");
+        const measuredHeight = bottom - top + 36;
+        const settingsHeight = panel ? panel.scrollHeight + 104 : 0;
+        void window.twin.setOverlayHeight(Math.ceil(Math.max(measuredHeight, settingsHeight)));
+      });
+    };
+    const observer = new ResizeObserver(measure);
+    document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .mode-popover").forEach((element) => observer.observe(element));
+    measure();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [hasContent, showModes, showSettings]);
 
   async function refreshConnections(force = false) {
     if (!force && !status?.configured.composio) return;
@@ -321,13 +328,11 @@ export function App() {
             className="drag-handle"
             title="Drag Twin"
             aria-label="Drag Twin"
-            role="button"
-            onPointerDown={beginWindowDrag}
-            onPointerMove={moveWindowDrag}
-            onPointerUp={endWindowDrag}
-            onPointerCancel={endWindowDrag}
           ><GripHorizontal size={18} /></div>
-          <button type="button" className="twin-orb" onClick={() => setShowModes(!showModes)} aria-label="Choose mode"><img src="./twin-mark.svg" alt="" /><ChevronDown size={10} /></button>
+          <div className="twin-orb" title="Drag Twin">
+            <img src="./twin-mark.svg" alt="Twin" />
+            <button type="button" className="mode-toggle" onClick={() => setShowModes(!showModes)} aria-label="Choose mode"><ChevronDown size={10} /></button>
+          </div>
           <span className="mode-label">{mode === "act" ? "Act" : "Dictate"}</span>
           <input ref={inputRef} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={recorder.recording ? "Listening…" : mode === "act" ? "Tell Twin what to do" : "Speak or type anywhere"} disabled={recorder.recording || busy} />
           {draft.trim() && !recorder.recording ? <button className="send-button" aria-label="Send"><Send size={15} /></button> : <button type="button" className="mic-button" onClick={toggleRecording} aria-label={recorder.recording ? "Stop recording" : "Start recording"}><Mic size={18} /></button>}

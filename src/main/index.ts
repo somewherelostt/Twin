@@ -24,7 +24,6 @@ const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
 
 let window: BrowserWindow | null = null;
 let screenContext: string | undefined;
-let windowDragOffset: { x: number; y: number } | undefined;
 
 configureIntegrations({
   getSessionId: () => runtime.get("composioSessionId"),
@@ -182,20 +181,18 @@ function registerIpc() {
   ipcMain.handle("twin:mouse-passthrough", (_event, passthrough: boolean) => {
     window?.setIgnoreMouseEvents(Boolean(passthrough), { forward: true });
   });
-  ipcMain.handle("twin:begin-window-drag", () => {
-    if (!window) return;
-    const cursor = screen.getCursorScreenPoint();
-    const [x, y] = window.getPosition();
-    windowDragOffset = { x: cursor.x - x, y: cursor.y - y };
-    window.setIgnoreMouseEvents(false);
-  });
-  ipcMain.handle("twin:move-window-drag", () => {
-    if (!window || !windowDragOffset) return;
-    const cursor = screen.getCursorScreenPoint();
-    window.setPosition(cursor.x - windowDragOffset.x, cursor.y - windowDragOffset.y);
-  });
-  ipcMain.handle("twin:end-window-drag", () => {
-    windowDragOffset = undefined;
+  ipcMain.handle("twin:set-overlay-height", (_event, height: number) => {
+    if (!window || !Number.isFinite(height)) return;
+    const nextHeight = Math.max(96, Math.min(600, Math.round(height)));
+    const bounds = window.getBounds();
+    if (Math.abs(bounds.height - nextHeight) < 2) return;
+    const display = screen.getDisplayMatching(bounds);
+    const desiredY = bounds.y + bounds.height - nextHeight;
+    const nextY = Math.max(
+      display.workArea.y,
+      Math.min(desiredY, display.workArea.y + display.workArea.height - nextHeight),
+    );
+    window.setBounds({ ...bounds, y: nextY, height: nextHeight }, false);
   });
   ipcMain.handle("twin:set-mode", (_event, mode: TwinMode) => settings.set("mode", mode));
 

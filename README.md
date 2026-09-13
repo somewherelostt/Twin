@@ -24,7 +24,7 @@ Twin is a desktop voice interface for writing and acting across your computer. D
 
 Press `Alt+Space` anywhere to open Twin.
 
-Drag the grip above the composer to place Twin anywhere on screen. Its position is remembered when it is reopened.
+Drag the Twin logo or the grip above the composer to place Twin anywhere on screen. Its position is remembered when it is reopened.
 
 - **Dictate** records speech, removes filler words and self-corrections, and pastes clean text into the previous app.
 - **Act** captures the screen behind Twin, records the request, and creates a clear action card. Nothing is sent or changed until **Run action** is pressed.
