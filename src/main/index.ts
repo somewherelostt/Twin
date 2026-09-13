@@ -24,6 +24,8 @@ const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
 
 let window: BrowserWindow | null = null;
 let screenContext: string | undefined;
+let compactPositionBeforeOnboarding: { x: number; y: number } | undefined;
+let ignorePositionEventsUntil = 0;
 
 configureIntegrations({
   getSessionId: () => runtime.get("composioSessionId"),
@@ -120,7 +122,7 @@ function createWindow() {
 
   window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   window.on("moved", () => {
-    if (!window) return;
+    if (!window || Date.now() < ignorePositionEventsUntil) return;
     const [x, y] = window.getPosition();
     settings.set("position", { x, y });
   });
@@ -189,7 +191,7 @@ function registerIpc() {
   });
   ipcMain.handle("twin:set-overlay-height", (_event, height: number) => {
     if (!window || !Number.isFinite(height)) return;
-    const nextHeight = Math.max(72, Math.min(600, Math.round(height)));
+    const nextHeight = Math.max(72, Math.min(640, Math.round(height)));
     const bounds = window.getBounds();
     if (Math.abs(bounds.height - nextHeight) < 2) return;
     const display = screen.getDisplayMatching(bounds);
@@ -199,6 +201,34 @@ function registerIpc() {
       Math.min(desiredY, display.workArea.y + display.workArea.height - nextHeight),
     );
     window.setBounds({ ...bounds, y: nextY, height: nextHeight }, false);
+  });
+  ipcMain.handle("twin:set-onboarding-window", (_event, enabled: boolean) => {
+    if (!window) return;
+    const bounds = window.getBounds();
+    const display = screen.getDisplayMatching(bounds);
+    ignorePositionEventsUntil = Date.now() + 600;
+    if (enabled) {
+      compactPositionBeforeOnboarding = { x: bounds.x, y: bounds.y };
+      const width = Math.min(880, display.workArea.width - 32);
+      const height = Math.min(602, display.workArea.height - 32);
+      window.setBounds({
+        x: Math.round(display.workArea.x + (display.workArea.width - width) / 2),
+        y: Math.round(display.workArea.y + (display.workArea.height - height) / 2),
+        width,
+        height,
+      }, false);
+      return;
+    }
+    const width = 660;
+    const height = 72;
+    const position = compactPositionBeforeOnboarding;
+    compactPositionBeforeOnboarding = undefined;
+    window.setBounds({
+      x: position?.x ?? Math.round(display.workArea.x + (display.workArea.width - width) / 2),
+      y: position?.y ?? display.workArea.y + display.workArea.height - height - 22,
+      width,
+      height,
+    }, false);
   });
   ipcMain.handle("twin:set-mode", (_event, mode: TwinMode) => settings.set("mode", mode));
 

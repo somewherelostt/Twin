@@ -74,6 +74,7 @@ export interface TwinBridge {
   hide(): Promise<void>;
   setMousePassthrough(passthrough: boolean): Promise<void>;
   setOverlayHeight(height: number): Promise<void>;
+  setOnboardingWindow(enabled: boolean): Promise<void>;
   setMode(mode: TwinMode): Promise<void>;
   getConnections(): Promise<ToolkitConnection[]>;
   connect(toolkit: Toolkit): Promise<{ redirectUrl: string }>;

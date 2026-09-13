@@ -8,6 +8,7 @@ const bridge: TwinBridge = {
   hide: () => ipcRenderer.invoke("twin:hide"),
   setMousePassthrough: (passthrough) => ipcRenderer.invoke("twin:mouse-passthrough", passthrough),
   setOverlayHeight: (height) => ipcRenderer.invoke("twin:set-overlay-height", height),
+  setOnboardingWindow: (enabled) => ipcRenderer.invoke("twin:set-onboarding-window", enabled),
   setMode: (mode: TwinMode) => ipcRenderer.invoke("twin:set-mode", mode),
   getConnections: () => ipcRenderer.invoke("twin:connections"),
   connect: (toolkit: Toolkit) => ipcRenderer.invoke("twin:connect", toolkit),

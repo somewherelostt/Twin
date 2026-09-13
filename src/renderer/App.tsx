@@ -29,6 +29,7 @@ import {
   type TwinMode,
 } from "../shared/contracts";
 import { useAudioRecorder } from "./useAudioRecorder";
+import { Onboarding } from "./Onboarding";
 
 const toolkitNames: Record<Toolkit, string> = {
   slack: "Slack",
@@ -67,7 +68,7 @@ export function App() {
 
   function updateMousePassthrough(target: EventTarget | null) {
     const element = target instanceof Element ? target : null;
-    const interactive = Boolean(element?.closest(".float-stack, .settings-panel"));
+    const interactive = Boolean(element?.closest(".float-stack, .settings-panel, .onboarding-shell"));
     void window.twin.setMousePassthrough(!interactive);
   }
 
@@ -99,12 +100,16 @@ export function App() {
   );
   const hasContent = Boolean(result || plan || actionResult || recorder.recording || busy || error);
 
+  useEffect(() => {
+    void window.twin.setOnboardingWindow(showOnboarding);
+  }, [showOnboarding]);
+
   useLayoutEffect(() => {
     let frame = 0;
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const elements = Array.from(document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .drag-handle, .mode-popover"));
+        const elements = Array.from(document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .onboarding-shell, .drag-handle, .mode-popover"));
         const rects = elements.filter((element) => element.offsetParent !== null).map((element) => element.getBoundingClientRect());
         if (rects.length === 0) return;
         const top = Math.min(...rects.map((rect) => rect.top));
@@ -117,7 +122,7 @@ export function App() {
       });
     };
     const observer = new ResizeObserver(measure);
-    document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .mode-popover").forEach((element) => observer.observe(element));
+    document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .onboarding-shell, .mode-popover").forEach((element) => observer.observe(element));
     measure();
     return () => {
       cancelAnimationFrame(frame);
@@ -363,45 +368,21 @@ export function App() {
       </section>}
 
       {showOnboarding && (
-        <div className="settings-backdrop onboarding-backdrop surface-enter">
-          <section className="settings-panel onboarding-panel">
-            {onboardingStep === 0 ? (
-              <div className="welcome-step">
-                <img src="./twin-mark.svg" alt="Twin" />
-                <span className="kicker">WELCOME TO TWIN</span>
-                <h1>Your voice, ready for work.</h1>
-                <p>Set up dictation and your work apps once. Twin will remember everything securely on this computer.</p>
-                <button type="button" className="save-button onboarding-action" onClick={() => setOnboardingStep(1)}>Set up Twin <ArrowRight size={14} /></button>
-              </div>
-            ) : onboardingStep === 1 ? (
-              <form onSubmit={saveCredentials}>
-                <div className="settings-head"><div className="key-icon"><KeyRound size={17} /></div><div><span className="kicker">STEP 1 OF 2</span><h2>Add your services</h2></div></div>
-                <p>Keys are encrypted by your operating system and never leave this computer except when calling their service.</p>
-                <div className="onboarding-key-grid">
-                  <label><span><strong>AssemblyAI</strong><small>Voice dictation · Required</small></span><em className={status?.configured.assemblyAI ? "ready" : ""}>{status?.configured.assemblyAI ? "Ready" : "Add key"}</em><input type="password" placeholder={status?.configured.assemblyAI ? "Already configured" : "Paste API key"} value={credentialInput.assemblyAI} onChange={(event) => setCredentialInput({ ...credentialInput, assemblyAI: event.target.value })} /></label>
-                  <label><span><strong>OpenAI</strong><small>Planning work actions</small></span><em className={status?.configured.openAI ? "ready" : ""}>{status?.configured.openAI ? "Ready" : "Add key"}</em><input type="password" placeholder={status?.configured.openAI ? "Already configured" : "Paste API key"} value={credentialInput.openAI} onChange={(event) => setCredentialInput({ ...credentialInput, openAI: event.target.value })} /></label>
-                  <label><span><strong>Composio</strong><small>Connecting your apps</small></span><em className={status?.configured.composio ? "ready" : ""}>{status?.configured.composio ? "Ready" : "Add key"}</em><input type="password" placeholder={status?.configured.composio ? "Already configured" : "Paste API key"} value={credentialInput.composio} onChange={(event) => setCredentialInput({ ...credentialInput, composio: event.target.value })} /></label>
-                </div>
-                <button className="save-button onboarding-action" disabled={busy || !(
-                  (status?.configured.assemblyAI || credentialInput.assemblyAI.trim())
-                  && (status?.configured.openAI || credentialInput.openAI.trim())
-                  && (status?.configured.composio || credentialInput.composio.trim())
-                )}>{busy ? <LoaderCircle className="spin" size={14} /> : <ArrowRight size={14} />} Save and continue</button>
-                {error && <div className="settings-error">{error}</div>}
-              </form>
-            ) : (
-              <div>
-                <div className="settings-head"><div className="key-icon"><Plug size={17} /></div><div><span className="kicker">STEP 2 OF 2</span><h2>Connect your work apps</h2></div></div>
-                <p>Connect the apps you use now. You can add or change them later from Settings.</p>
-                <div className="connections onboarding-connections">{connections.map((connection) => <button type="button" key={connection.slug} className={connection.connected ? "connected" : ""} disabled={!status?.configured.composio || connecting !== null || connection.connected} onClick={() => connect(connection.slug)}><i className={connection.slug}>{toolkitNames[connection.slug][0]}</i><span>{toolkitNames[connection.slug]}<small>{connection.connected ? "Connected" : status?.configured.composio ? "Connect" : "Needs Composio"}</small></span>{connection.connected ? <CheckCircle2 size={14} /> : connecting === connection.slug ? <LoaderCircle className="spin" size={14} /> : <Plug size={14} />}</button>)}</div>
-                <button type="button" className="save-button onboarding-action" disabled={busy} onClick={() => void finishOnboarding()}>{busy ? <LoaderCircle className="spin" size={14} /> : <Check size={14} />} Finish setup</button>
-                {error && <div className="settings-error">{error}</div>}
-              </div>
-            )}
-          </section>
-        </div>
+        <Onboarding
+          step={onboardingStep}
+          status={status}
+          credentialInput={credentialInput}
+          busy={busy}
+          error={error}
+          connections={connections}
+          connecting={connecting}
+          onStepChange={setOnboardingStep}
+          onCredentialChange={setCredentialInput}
+          onSaveCredentials={saveCredentials}
+          onConnect={(toolkit) => void connect(toolkit)}
+          onFinish={() => void finishOnboarding()}
+        />
       )}
-
       {showSettings && !showOnboarding && (
         <div className="settings-backdrop surface-enter">
           <form className="settings-panel" onSubmit={saveCredentials}>
