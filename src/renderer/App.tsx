@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  AlertCircle,
   AudioLines,
   Check,
   CheckCircle2,
@@ -56,16 +57,28 @@ export function App() {
   const [copied, setCopied] = useState(false);
   const [showModes, setShowModes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [executionMessage, setExecutionMessage] = useState("");
   const [credentialInput, setCredentialInput] = useState({ assemblyAI: "", openAI: "", composio: "" });
   const inputRef = useRef<HTMLInputElement>(null);
   const recorder = useAudioRecorder();
 
   useEffect(() => {
     void window.twin.getStatus().then(setStatus);
-    return window.twin.onActivated(() => {
+    const stopActivated = window.twin.onActivated(() => {
       setError("");
       setTimeout(() => inputRef.current?.focus(), 80);
     });
+    const stopProgress = window.twin.onActionProgress((progress) => {
+      setExecutionMessage(progress.message);
+    });
+    const stopConnections = window.twin.onConnectionsChanged(() => {
+      void refreshConnections();
+    });
+    return () => {
+      stopActivated();
+      stopProgress();
+      stopConnections();
+    };
   }, []);
 
   const canRecord = useMemo(
@@ -74,8 +87,8 @@ export function App() {
   );
   const hasContent = Boolean(result || plan || actionResult || recorder.recording || busy || error);
 
-  async function refreshConnections() {
-    if (!status?.configured.composio) return;
+  async function refreshConnections(force = false) {
+    if (!force && !status?.configured.composio) return;
     try {
       setConnections(await window.twin.getConnections());
     } catch (cause) {
@@ -94,11 +107,13 @@ export function App() {
     setResult(null);
     setPlan(null);
     setActionResult(null);
+    setExecutionMessage("");
     setError("");
   }
 
   async function prepareCommand(command: string) {
     setBusy(true);
+    setExecutionMessage("Preparing your action…");
     setError("");
     setPlan(null);
     setActionResult(null);
@@ -144,6 +159,7 @@ export function App() {
     }
 
     setBusy(true);
+    setExecutionMessage("Starting the workflow…");
     try {
       const audio = await recorder.stop();
       const transcript = await window.twin.transcribe({ audio, languageCodes: ["en"] });
@@ -205,7 +221,7 @@ export function App() {
       setStatus(nextStatus);
       setCredentialInput({ assemblyAI: "", openAI: "", composio: "" });
       setShowSettings(false);
-      if (nextStatus.configured.composio) void refreshConnections();
+      if (nextStatus.configured.composio) void refreshConnections(true);
     } catch (cause) {
       setError(friendlyError(cause, "Could not save credentials"));
     } finally {
@@ -246,9 +262,9 @@ export function App() {
                 </div>
               </div>
             ) : actionResult ? (
-              <div className="complete-card">
-                <div className="complete-icon"><Check size={18} /></div>
-                <div><span className="kicker">DONE</span><h2>{plan?.title}</h2><p>{actionResult.summary}</p></div>
+              <div className={`complete-card ${actionResult.status === "needs_attention" ? "attention" : ""}`}>
+                <div className="complete-icon">{actionResult.status === "completed" ? <Check size={18} /> : <AlertCircle size={18} />}</div>
+                <div><span className="kicker">{actionResult.status === "completed" ? "DONE" : "NEEDS ATTENTION"}</span><h2>{plan?.title}</h2><p>{actionResult.summary}</p>{actionResult.steps.length > 0 && <small>{actionResult.steps.length} app {actionResult.steps.length === 1 ? "step" : "steps"} attempted</small>}</div>
                 <button className="icon-action" onClick={resetOutput} aria-label="Start another action"><RotateCcw size={15} /></button>
               </div>
             ) : plan ? (
@@ -258,9 +274,12 @@ export function App() {
                 <h2>{plan.title}</h2>
                 <p>{plan.description}</p>
                 <div className="operation-row"><span>Action</span><strong>{plan.operation}</strong></div>
+                {!plan.ready && <div className="missing-details"><AlertCircle size={14} /><span><strong>More detail needed</strong>{plan.missingDetails.join(" · ")}</span></div>}
+                {busy && <div className="execution-status"><LoaderCircle className="spin" size={13} />{executionMessage || "Running the workflow…"}</div>}
+                {error && <div className="plan-error">{error}</div>}
                 <div className="surface-actions">
                   <button className="quiet-action" onClick={resetOutput}>Cancel</button>
-                  <button className="confirm-action" disabled={busy} onClick={runAction}>{busy ? <><LoaderCircle className="spin" size={14} /> Running…</> : <>Run action <ArrowRight size={14} /></>}</button>
+                  <button className="confirm-action" disabled={busy || !plan.ready} onClick={runAction}>{busy ? <><LoaderCircle className="spin" size={14} /> Running…</> : plan.ready ? <>Run action <ArrowRight size={14} /></> : <>Add details</>}</button>
                 </div>
               </div>
             ) : error ? (
@@ -289,7 +308,7 @@ export function App() {
               <label>Composio <span className={status?.configured.composio ? "ready" : ""}>{status?.configured.composio ? "Ready" : "For apps"}</span><input type="password" placeholder={status?.configured.composio ? "Replace existing key" : "Paste API key"} value={credentialInput.composio} onChange={(event) => setCredentialInput({ ...credentialInput, composio: event.target.value })} /></label>
             </div>
             <button className="save-button" disabled={busy || !Object.values(credentialInput).some(Boolean)}>{busy ? <LoaderCircle className="spin" size={14} /> : <Check size={14} />} Save securely</button>
-            <div className="integration-head"><span>WORK APPS</span><button type="button" onClick={refreshConnections}>Refresh</button></div>
+            <div className="integration-head"><span>WORK APPS</span><button type="button" onClick={() => void refreshConnections()}>Refresh</button></div>
             <div className="connections">{connections.map((connection) => <button type="button" key={connection.slug} className={connection.connected ? "connected" : ""} disabled={!status?.configured.composio || connecting !== null || connection.connected} onClick={() => connect(connection.slug)}><i className={connection.slug}>{toolkitNames[connection.slug][0]}</i><span>{toolkitNames[connection.slug]}<small>{connection.connected ? "Connected" : "Connect"}</small></span>{connection.connected ? <CheckCircle2 size={14} /> : connecting === connection.slug ? <LoaderCircle className="spin" size={14} /> : <Plug size={14} />}</button>)}</div>
             {error && <div className="settings-error">{error}</div>}
           </form>

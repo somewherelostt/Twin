@@ -78,7 +78,17 @@ button { color: inherit; }
 .complete-card { min-height: 132px; display: flex; align-items: flex-start; gap: 13px; padding: 21px; background: linear-gradient(120deg, rgba(33,101,41,.24), transparent 58%); }
 .complete-card > div:nth-child(2) { min-width: 0; flex: 1; }
 .complete-card p { margin: 7px 0 0; color: #9fa39a; font-size: 12px; line-height: 1.5; }
+.complete-card small { display: block; margin-top: 8px; color: #71756d; font-size: 9px; }
 .complete-icon { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; color: #baff7a; border-radius: 11px; background: rgba(93,255,117,.11); }
+.complete-card.attention { background: linear-gradient(120deg, rgba(131,92,31,.22), transparent 58%); }
+.complete-card.attention .complete-icon, .complete-card.attention .kicker { color: #ffd27c; }
+.complete-card.attention .complete-icon { background: rgba(255,183,74,.1); }
+.missing-details { margin-top: 10px; display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; color: #e6bf79; border: 1px solid rgba(255,190,90,.14); border-radius: 10px; background: rgba(116,75,15,.1); font-size: 10px; }
+.missing-details svg { flex: 0 0 auto; margin-top: 1px; }
+.missing-details span, .missing-details strong { display: block; }
+.missing-details strong { margin-bottom: 2px; color: #f0d6a7; font-size: 10px; }
+.execution-status { margin-top: 10px; display: flex; align-items: center; gap: 7px; color: #a9c653; font-size: 10px; }
+.plan-error { margin-top: 9px; color: #ff9f98; font-size: 10px; line-height: 1.4; }
 .error-card { min-height: 60px; display: flex; align-items: center; gap: 12px; padding: 13px 16px; color: #ffaaa4; font-size: 12px; }
 .error-card span { flex: 1; }
 .error-card button { display: grid; place-items: center; color: #8f7774; border: 0; background: transparent; cursor: pointer; }

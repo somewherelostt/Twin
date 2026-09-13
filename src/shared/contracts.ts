@@ -44,11 +44,26 @@ export interface ActionPlan {
   toolkits: Toolkit[];
   operation: string;
   confirmation: string;
+  ready: boolean;
+  missingDetails: string[];
+}
+
+export interface ActionStep {
+  label: string;
+  toolkit?: Toolkit;
 }
 
 export interface ActionResult {
   planId: string;
   summary: string;
+  status: "completed" | "needs_attention";
+  steps: ActionStep[];
+}
+
+export interface ActionProgress {
+  planId: string;
+  message: string;
+  step: number;
 }
 
 export interface TwinBridge {
@@ -63,4 +78,6 @@ export interface TwinBridge {
   executeAction(planId: string): Promise<ActionResult>;
   paste(text: string): Promise<void>;
   onActivated(callback: () => void): () => void;
+  onActionProgress(callback: (progress: ActionProgress) => void): () => void;
+  onConnectionsChanged(callback: () => void): () => void;
 }

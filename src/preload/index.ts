@@ -17,6 +17,16 @@ const bridge: TwinBridge = {
     ipcRenderer.on("twin:activated", listener);
     return () => ipcRenderer.removeListener("twin:activated", listener);
   },
+  onActionProgress: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof callback>[0]) => callback(progress);
+    ipcRenderer.on("twin:action-progress", listener);
+    return () => ipcRenderer.removeListener("twin:action-progress", listener);
+  },
+  onConnectionsChanged: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("twin:connections-changed", listener);
+    return () => ipcRenderer.removeListener("twin:connections-changed", listener);
+  },
 };
 
 contextBridge.exposeInMainWorld("twin", bridge);

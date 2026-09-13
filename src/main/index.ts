@@ -6,10 +6,12 @@ import "dotenv/config";
 import { TOOLKITS, type AppStatus, type CredentialInput, type Toolkit, type TwinMode } from "../shared/contracts";
 import { transcribeDictation } from "./services/dictation";
 import {
+  configureIntegrations,
   connectToolkit,
   executeAction,
   getConnections,
   prepareAction,
+  resetIntegrations,
 } from "./services/integrations";
 import { pasteIntoPreviousApp } from "./services/paste";
 
@@ -18,9 +20,20 @@ const settings = new Store<{ shortcut: string; mode: TwinMode }>({
   defaults: { shortcut: "Alt+Space", mode: "dictate" },
 });
 const credentials = new Store<{ assemblyAI?: string; openAI?: string; composio?: string }>({ name: "credentials" });
+const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
 
 let window: BrowserWindow | null = null;
 let screenContext: string | undefined;
+
+configureIntegrations({
+  getSessionId: () => runtime.get("composioSessionId"),
+  setSessionId: (sessionId) => {
+    if (sessionId) runtime.set("composioSessionId", sessionId);
+    else runtime.delete("composioSessionId");
+  },
+  onProgress: (progress) => window?.webContents.send("twin:action-progress", progress),
+  onConnectionsChanged: () => window?.webContents.send("twin:connections-changed"),
+});
 
 function getStatus(): AppStatus {
   return {
@@ -61,6 +74,7 @@ function saveCredentials(input: CredentialInput) {
     credentials.set(key, safeStorage.encryptString(value).toString("base64"));
     process.env[environmentName] = value;
   }
+  if (input.composio?.trim()) resetIntegrations();
   return getStatus();
 }
 
@@ -75,7 +89,9 @@ async function captureScreenContext(display = screen.getDisplayNearestPoint(scre
       },
     });
     const source = sources.find((item) => item.display_id === String(display.id)) ?? sources[0];
-    screenContext = source?.thumbnail.isEmpty() ? undefined : source?.thumbnail.toDataURL();
+    screenContext = source?.thumbnail.isEmpty()
+      ? undefined
+      : `data:image/jpeg;base64,${source?.thumbnail.toJPEG(72).toString("base64")}`;
   } catch {
     screenContext = undefined;
   }
@@ -164,7 +180,11 @@ function registerIpc() {
     return connection;
   });
 
-  ipcMain.handle("twin:prepare-action", (_event, command: string) => prepareAction(command, screenContext));
+  ipcMain.handle("twin:prepare-action", async (_event, command: string) => {
+    const context = screenContext;
+    screenContext = undefined;
+    return prepareAction(command, context);
+  });
   ipcMain.handle("twin:execute-action", (_event, planId: string) => executeAction(planId));
 
   ipcMain.handle("twin:open-external", async (_event, url: string) => {
