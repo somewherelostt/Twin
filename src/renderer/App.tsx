@@ -301,7 +301,7 @@ export function App() {
 
         <form className={`composer ${recorder.recording ? "recording" : ""}`} onSubmit={submitDraft}>
           <div className="drag-handle" title="Drag Twin" aria-hidden="true"><GripHorizontal size={18} /></div>
-          <button type="button" className="twin-orb" onClick={() => setShowModes(!showModes)} aria-label="Choose mode"><span>T</span><ChevronDown size={10} /></button>
+          <button type="button" className="twin-orb" onClick={() => setShowModes(!showModes)} aria-label="Choose mode"><img src="./twin-mark.svg" alt="" /><ChevronDown size={10} /></button>
           <span className="mode-label">{mode === "act" ? "Act" : "Dictate"}</span>
           <input ref={inputRef} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={recorder.recording ? "Listening…" : mode === "act" ? "Tell Twin what to do" : "Speak or type anywhere"} disabled={recorder.recording || busy} />
           {draft.trim() && !recorder.recording ? <button className="send-button" aria-label="Send"><Send size={15} /></button> : <button type="button" className="mic-button" onClick={toggleRecording} aria-label={recorder.recording ? "Stop recording" : "Start recording"}><Mic size={18} /></button>}

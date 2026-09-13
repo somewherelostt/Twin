@@ -104,6 +104,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
+    icon: path.join(currentDir, "../assets/twin-icon.png"),
     show: false,
     resizable: false,
     hasShadow: false,

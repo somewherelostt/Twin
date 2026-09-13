@@ -28,9 +28,9 @@ button { color: inherit; }
 .drag-handle { position: absolute; left: 50%; top: -12px; z-index: 3; width: 54px; height: 20px; display: grid; place-items: center; color: #777a72; border: 1px solid rgba(255,255,255,.1); border-bottom: 0; border-radius: 9px 9px 3px 3px; background: rgba(17,18,16,.94); cursor: grab; transform: translateX(-50%); -webkit-app-region: drag; }
 .drag-handle:hover { color: #d7ff4e; }
 .drag-handle:active { cursor: grabbing; }
-.twin-orb { position: relative; width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 14px; color: #10110e; background: #d7ff4e; cursor: pointer; }
-.twin-orb span { font-size: 16px; font-weight: 650; }
-.twin-orb svg { position: absolute; right: 3px; bottom: 3px; opacity: .65; }
+.twin-orb { position: relative; width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; padding: 0; border: 0; border-radius: 14px; color: #10110e; background: transparent; cursor: pointer; }
+.twin-orb img { width: 42px; height: 42px; display: block; border-radius: 14px; }
+.twin-orb svg { position: absolute; right: 3px; bottom: 3px; padding: 1px; border-radius: 50%; background: rgba(215,255,78,.8); opacity: .78; }
 .mode-label { padding-left: 2px; color: #a8aba2; font-size: 11px; font-weight: 600; }
 .composer input { min-width: 0; flex: 1; padding: 8px 2px; color: #f2f3ee; border: 0; outline: 0; background: transparent; font-size: 14px; }
 .composer input::placeholder { color: #74776f; }

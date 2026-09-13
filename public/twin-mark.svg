@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Twin pulse mark</title>
+  <rect x="16" y="16" width="224" height="224" rx="64" fill="#d7ff4e"/>
+  <g fill="#10110e">
+    <rect x="48" y="116" width="24" height="24" rx="12"/>
+    <rect x="78" y="92" width="22" height="72" rx="11" transform="rotate(-8 89 128)"/>
+    <rect x="108" y="62" width="22" height="132" rx="11" transform="rotate(-4 119 128)"/>
+    <rect x="136" y="62" width="22" height="132" rx="11" transform="rotate(4 147 128)"/>
+    <rect x="166" y="92" width="22" height="72" rx="11" transform="rotate(8 177 128)"/>
+    <rect x="196" y="116" width="24" height="24" rx="12"/>
+  </g>
+</svg>

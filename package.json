@@ -42,13 +42,16 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "assets/twin-icon.png",
       "package.json"
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": "nsis"
     },
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
       "target": "dmg"
     }
   },
