@@ -1,0 +1,12 @@
+/ref/
+/node_modules/
+/dist/
+/dist-electron/
+.env
+.env.*
+!.env.example
+*.log
+release/
+*.tsbuildinfo
+/vite.config.js
+/vite.config.d.ts

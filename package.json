@@ -1,0 +1,59 @@
+{
+  "name": "twin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A voice interface for work across your computer and connected apps.",
+  "main": "dist-electron/index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --pretty false",
+    "package": "pnpm build && electron-builder",
+    "package:win": "pnpm build && electron-builder --win"
+  },
+  "dependencies": {
+    "@composio/core": "^0.18.1",
+    "@composio/openai": "^0.12.2",
+    "dotenv": "^17.4.2",
+    "electron-store": "^11.0.2",
+    "lucide-react": "^1.45.0",
+    "openai": "^7.15.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0",
+    "vite-plugin-electron": "^1.1.2"
+  },
+  "build": {
+    "appId": "app.twin.desktop",
+    "productName": "Twin",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    }
+  },
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=20.19"
+  }
+}
