@@ -183,7 +183,7 @@ function registerIpc() {
   });
   ipcMain.handle("twin:set-overlay-height", (_event, height: number) => {
     if (!window || !Number.isFinite(height)) return;
-    const nextHeight = Math.max(96, Math.min(600, Math.round(height)));
+    const nextHeight = Math.max(72, Math.min(600, Math.round(height)));
     const bounds = window.getBounds();
     if (Math.abs(bounds.height - nextHeight) < 2) return;
     const display = screen.getDisplayMatching(bounds);

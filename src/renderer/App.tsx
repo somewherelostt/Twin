@@ -105,8 +105,8 @@ export function App() {
         const top = Math.min(...rects.map((rect) => rect.top));
         const bottom = Math.max(...rects.map((rect) => rect.bottom));
         const panel = document.querySelector<HTMLElement>(".settings-panel");
-        const measuredHeight = bottom - top + 36;
-        const settingsHeight = panel ? panel.scrollHeight + 104 : 0;
+        const measuredHeight = bottom - top + 2;
+        const settingsHeight = panel ? panel.scrollHeight + 69 : 0;
         void window.twin.setOverlayHeight(Math.ceil(Math.max(measuredHeight, settingsHeight)));
       });
     };
