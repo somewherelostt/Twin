@@ -97,15 +97,21 @@ export async function connectToolkit(toolkit: Toolkit) {
   return { redirectUrl: request.redirectUrl };
 }
 
-export async function prepareAction(command: string): Promise<ActionPlan> {
+export async function prepareAction(command: string, screenContext?: string): Promise<ActionPlan> {
   const spokenCommand = command.trim();
   if (!spokenCommand) throw new Error("Say what you want Twin to do");
 
   const response = await getOpenAI().responses.create({
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
     instructions:
-      "You turn a spoken work request into a short review card. Choose exactly one toolkit: slack, jira, gmail, or github. Do not execute anything. Return JSON only with title, description, toolkit, operation, and confirmation. Description must include the recipient, destination, repository, project, or channel when the user supplied it. Confirmation must clearly state the external effect. Never invent missing names or content; mention missing details in the description.",
-    input: spokenCommand,
+      "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose exactly one toolkit: slack, jira, gmail, or github. Do not execute anything. Return JSON only with title, description, toolkit, operation, and confirmation. Description must include the recipient, destination, repository, project, or channel when it is known. Confirmation must clearly state the external effect. Never invent missing names or content; mention missing details in the description.",
+    input: [{
+      role: "user",
+      content: [
+        { type: "input_text", text: spokenCommand },
+        ...(screenContext ? [{ type: "input_image" as const, image_url: screenContext, detail: "low" as const }] : []),
+      ],
+    }],
     text: {
       format: {
         type: "json_schema",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, AudioLines, Check, CheckCircle2, Command, Copy, LoaderCircle, Plug, RefreshCw, Settings2, X } from "lucide-react";
+import { ArrowRight, AudioLines, Check, CheckCircle2, Command, Copy, KeyRound, LoaderCircle, Plug, RefreshCw, Settings2, X } from "lucide-react";
 import { TOOLKITS, type ActionPlan, type ActionResult, type AppStatus, type DictationResult, type Toolkit, type ToolkitConnection, type TwinMode } from "../shared/contracts";
 import { useAudioRecorder } from "./useAudioRecorder";
 
@@ -21,6 +21,8 @@ export function App() {
   const [connecting, setConnecting] = useState<Toolkit | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [credentialInput, setCredentialInput] = useState({ assemblyAI: "", openAI: "", composio: "" });
   const recorder = useAudioRecorder();
 
   useEffect(() => {
@@ -127,14 +129,41 @@ export function App() {
     return mode === "dictate" ? "Start dictating" : "Speak an action";
   }
 
+  async function saveCredentials(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      setStatus(await window.twin.saveCredentials(credentialInput));
+      setCredentialInput({ assemblyAI: "", openAI: "", composio: "" });
+      setShowSettings(false);
+    } catch (cause) {
+      setError(friendlyError(cause, "Could not save credentials"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="shell">
       <header className="titlebar">
         <div className="brand-mark">T</div><span className="brand">Twin</span>
         <span className="shortcut">{status?.shortcut ?? "Alt+Space"}</span>
-        <button className="icon-button" aria-label="Settings"><Settings2 size={16} /></button>
+        <button className="icon-button" aria-label="Settings" onClick={() => setShowSettings(true)}><Settings2 size={16} /></button>
         <button className="icon-button" aria-label="Close" onClick={() => window.twin.hide()}><X size={17} /></button>
       </header>
+
+      {showSettings && <div className="settings-backdrop">
+        <form className="settings-panel" onSubmit={saveCredentials}>
+          <div className="settings-head"><div className="action-icon"><KeyRound size={18} /></div><div><span className="eyebrow">LOCAL SETUP</span><h2>Connect Twin</h2></div><button type="button" className="icon-button" onClick={() => setShowSettings(false)}><X size={16} /></button></div>
+          <p>Credentials are encrypted by your operating system and stay on this computer.</p>
+          <label>AssemblyAI <span className={status?.configured.assemblyAI ? "ready" : ""}>{status?.configured.assemblyAI ? "Ready" : "Required"}</span><input type="password" placeholder={status?.configured.assemblyAI ? "Replace existing key" : "Paste API key"} value={credentialInput.assemblyAI} onChange={(event) => setCredentialInput({ ...credentialInput, assemblyAI: event.target.value })} /></label>
+          <label>OpenAI <span className={status?.configured.openAI ? "ready" : ""}>{status?.configured.openAI ? "Ready" : "For actions"}</span><input type="password" placeholder={status?.configured.openAI ? "Replace existing key" : "Paste API key"} value={credentialInput.openAI} onChange={(event) => setCredentialInput({ ...credentialInput, openAI: event.target.value })} /></label>
+          <label>Composio <span className={status?.configured.composio ? "ready" : ""}>{status?.configured.composio ? "Ready" : "For connected apps"}</span><input type="password" placeholder={status?.configured.composio ? "Replace existing key" : "Paste API key"} value={credentialInput.composio} onChange={(event) => setCredentialInput({ ...credentialInput, composio: event.target.value })} /></label>
+          {error && <p className="error">{error}</p>}
+          <button className="primary save-button" disabled={busy || !Object.values(credentialInput).some(Boolean)}>{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />} Save securely</button>
+        </form>
+      </div>}
 
       <section className="workspace">
         <div className="toolbar">

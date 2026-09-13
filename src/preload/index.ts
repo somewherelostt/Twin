@@ -3,6 +3,7 @@ import type { Toolkit, TwinBridge, TwinMode } from "../shared/contracts";
 
 const bridge: TwinBridge = {
   getStatus: () => ipcRenderer.invoke("twin:status"),
+  saveCredentials: (input) => ipcRenderer.invoke("twin:save-credentials", input),
   hide: () => ipcRenderer.invoke("twin:hide"),
   setMode: (mode: TwinMode) => ipcRenderer.invoke("twin:set-mode", mode),
   getConnections: () => ipcRenderer.invoke("twin:connections"),

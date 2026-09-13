@@ -106,5 +106,18 @@ button { font: inherit; }
 .success-card .action-icon { margin-bottom: 18px; }
 .new-action { padding: 9px 13px; border-radius: 9px; cursor: pointer; }
 
+.settings-backdrop { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 22px; border-radius: 20px; background: rgba(5,6,5,.72); backdrop-filter: blur(10px); }
+.settings-panel { width: min(470px, 100%); padding: 22px; border: 1px solid rgba(255,255,255,.11); border-radius: 16px; background: #141512; box-shadow: 0 24px 60px rgba(0,0,0,.45); }
+.settings-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.settings-head > div:nth-child(2) { flex: 1; }
+.settings-head h2 { margin: 4px 0 0; font-size: 21px; letter-spacing: -.035em; }
+.settings-panel > p { margin: 0 0 17px; color: #8f9289; font-size: 12px; line-height: 1.5; }
+.settings-panel label { position: relative; display: block; margin-top: 11px; color: #d6d8d0; font-size: 11px; font-weight: 600; }
+.settings-panel label > span { position: absolute; right: 0; color: #777a72; font: 9px "DM Mono", monospace; font-weight: 400; }
+.settings-panel label > span.ready { color: #a9c05b; }
+.settings-panel input { display: block; width: 100%; margin-top: 6px; padding: 10px 11px; color: #f4f3ed; border: 1px solid rgba(255,255,255,.09); border-radius: 9px; outline: none; background: #0f100e; font: 11px "DM Mono", monospace; }
+.settings-panel input:focus { border-color: rgba(217,255,87,.5); box-shadow: 0 0 0 3px rgba(217,255,87,.07); }
+.save-button { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 17px; padding: 10px 13px; border-radius: 9px; cursor: pointer; }
+
 @keyframes pulse { 50% { opacity: .35; transform: scale(.72); } }
 @keyframes spin { to { transform: rotate(360deg); } }

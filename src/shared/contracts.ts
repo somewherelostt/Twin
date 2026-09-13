@@ -12,6 +12,12 @@ export interface AppStatus {
   shortcut: string;
 }
 
+export interface CredentialInput {
+  assemblyAI?: string;
+  openAI?: string;
+  composio?: string;
+}
+
 export interface ToolkitConnection {
   slug: Toolkit;
   connected: boolean;
@@ -47,6 +53,7 @@ export interface ActionResult {
 
 export interface TwinBridge {
   getStatus(): Promise<AppStatus>;
+  saveCredentials(input: CredentialInput): Promise<AppStatus>;
   hide(): Promise<void>;
   setMode(mode: TwinMode): Promise<void>;
   getConnections(): Promise<ToolkitConnection[]>;
