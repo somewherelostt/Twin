@@ -79,6 +79,7 @@ export interface TwinBridge {
   connect(toolkit: Toolkit): Promise<{ redirectUrl: string }>;
   transcribe(request: DictationRequest): Promise<DictationResult>;
   prepareAction(command: string): Promise<ActionPlan>;
+  cancelPrepare(): Promise<void>;
   executeAction(planId: string): Promise<ActionResult>;
   paste(text: string): Promise<void>;
   onActivated(callback: () => void): () => void;

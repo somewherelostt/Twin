@@ -53,6 +53,10 @@ button { color: inherit; }
 .wave i { width: 2px; border-radius: 10px; background: #d7ff4e; animation: wave 820ms ease-in-out infinite alternate; }
 .thinking-state { min-height: 82px; display: flex; align-items: center; gap: 11px; padding: 0 24px; color: #b9bcb4; font-size: 13px; }
 .thinking-state svg { color: #d7ff4e; }
+.thinking-state > span { min-width: 0; flex: 1; }
+.thinking-state small { display: block; margin-top: 4px; color: #6f736a; font-size: 9px; }
+.thinking-state button { padding: 7px 10px; color: #8f928a; border: 1px solid rgba(255,255,255,.08); border-radius: 9px; background: #20211e; font-size: 10px; cursor: pointer; }
+.thinking-state button:hover { color: #eef0e9; background: #282925; }
 
 .surface-head { display: flex; align-items: center; justify-content: space-between; }
 .surface-head button, .icon-action { width: 30px; height: 30px; display: grid; place-items: center; color: #777a73; border: 0; border-radius: 9px; background: transparent; cursor: pointer; }
@@ -97,6 +101,7 @@ button { color: inherit; }
 .error-card { min-height: 60px; display: flex; align-items: center; gap: 12px; padding: 13px 16px; color: #ffaaa4; font-size: 12px; }
 .error-card span { flex: 1; }
 .error-card button { display: grid; place-items: center; color: #8f7774; border: 0; background: transparent; cursor: pointer; }
+.error-card .retry-action { min-height: 30px; display: flex; grid-auto-flow: column; gap: 6px; padding: 0 10px; color: #d7ff4e; border: 1px solid rgba(215,255,78,.18); border-radius: 9px; background: rgba(215,255,78,.06); }
 
 .mode-popover { position: absolute; left: 0; bottom: 67px; z-index: 4; width: 284px; padding: 6px; border-radius: 16px; transform-origin: bottom left; }
 .mode-popover button { width: 100%; display: flex; align-items: center; gap: 11px; padding: 10px; color: #8f928a; border: 0; border-radius: 11px; background: transparent; text-align: left; cursor: pointer; }

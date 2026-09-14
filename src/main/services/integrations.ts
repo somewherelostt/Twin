@@ -190,12 +190,15 @@ export async function connectToolkit(toolkit: Toolkit) {
   return { redirectUrl: request.redirectUrl };
 }
 
-export async function prepareAction(command: string, screenContext?: string): Promise<ActionPlan> {
+export async function prepareAction(command: string, screenContext?: string, signal?: AbortSignal): Promise<ActionPlan> {
   const spokenCommand = command.trim();
   if (!spokenCommand) throw new Error("Say what you want Twin to do");
 
-  const response = await getOpenAI().responses.create({
+  let response: Awaited<ReturnType<ReturnType<typeof getOpenAI>["responses"]["create"]>>;
+  try {
+    response = await getOpenAI().responses.create({
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
+    reasoning: { effort: "minimal" },
     instructions:
       "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose every required toolkit from slack, jira, gmail, and github. Support workflows that move information between apps. Do not execute anything. Return JSON only with title, description, toolkits, operation, confirmation, ready, and missingDetails. Set ready to false when a required recipient, destination, repository, project, or content cannot be resolved from the request or screenshot, and list each missing item. Confirmation must clearly state every external effect. Never invent missing names or content.",
     input: [{
@@ -206,6 +209,7 @@ export async function prepareAction(command: string, screenContext?: string): Pr
       ],
     }],
     text: {
+      verbosity: "low",
       format: {
         type: "json_schema",
         name: "twin_action_plan",
@@ -226,7 +230,17 @@ export async function prepareAction(command: string, screenContext?: string): Pr
         },
       },
     },
-  });
+    }, {
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
+      maxRetries: 0,
+    });
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "";
+    if (name.includes("Abort") || name.includes("Timeout")) {
+      throw new Error("Twin took too long to understand that. Try again.");
+    }
+    throw error;
+  }
 
   let parsed: unknown;
   try {

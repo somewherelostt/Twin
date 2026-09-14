@@ -25,6 +25,7 @@ const runtime = new Store<{ composioSessionId?: string }>({ name: "runtime" });
 let window: BrowserWindow | null = null;
 let screenContext: string | undefined;
 let windowIsOnboarding = false;
+let plannerController: AbortController | undefined;
 
 configureIntegrations({
   getSessionId: () => runtime.get("composioSessionId"),
@@ -247,9 +248,20 @@ function registerIpc() {
   });
 
   ipcMain.handle("twin:prepare-action", async (_event, command: string) => {
+    plannerController?.abort();
+    const controller = new AbortController();
+    plannerController = controller;
     const context = screenContext;
     screenContext = undefined;
-    return prepareAction(command, context);
+    try {
+      return await prepareAction(command, context, controller.signal);
+    } finally {
+      if (plannerController === controller) plannerController = undefined;
+    }
+  });
+  ipcMain.handle("twin:cancel-prepare", () => {
+    plannerController?.abort();
+    plannerController = undefined;
   });
   ipcMain.handle("twin:execute-action", (_event, planId: string) => executeAction(planId));
 

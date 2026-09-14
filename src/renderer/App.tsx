@@ -54,6 +54,7 @@ export function App() {
     TOOLKITS.map((slug) => ({ slug, connected: false })),
   );
   const [busy, setBusy] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const [connecting, setConnecting] = useState<Toolkit | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -64,6 +65,7 @@ export function App() {
   const [executionMessage, setExecutionMessage] = useState("");
   const [credentialInput, setCredentialInput] = useState({ assemblyAI: "", openAI: "", composio: "" });
   const inputRef = useRef<HTMLInputElement>(null);
+  const planningRequestRef = useRef(0);
   const recorder = useAudioRecorder();
 
   function updateMousePassthrough(target: EventTarget | null) {
@@ -151,19 +153,36 @@ export function App() {
   }
 
   async function prepareCommand(command: string) {
+    const requestId = ++planningRequestRef.current;
     setBusy(true);
+    setPlanning(true);
     setExecutionMessage("Preparing your action…");
     setError("");
     setPlan(null);
     setActionResult(null);
     try {
-      setPlan(await window.twin.prepareAction(command));
+      const nextPlan = await window.twin.prepareAction(command);
+      if (requestId !== planningRequestRef.current) return;
+      setPlan(nextPlan);
       setDraft("");
     } catch (cause) {
+      if (requestId !== planningRequestRef.current) return;
       setError(friendlyError(cause, "Could not prepare the action"));
     } finally {
-      setBusy(false);
+      if (requestId === planningRequestRef.current) {
+        setBusy(false);
+        setPlanning(false);
+      }
     }
+  }
+
+  function cancelPlanning() {
+    planningRequestRef.current += 1;
+    setBusy(false);
+    setPlanning(false);
+    setExecutionMessage("");
+    setError("");
+    void window.twin.cancelPrepare();
   }
 
   async function submitDraft(event: FormEvent) {
@@ -309,7 +328,7 @@ export function App() {
                 <div><span className="kicker">LISTENING</span><p>Say it naturally. Twin will clean it up.</p></div>
               </div>
             ) : busy && !plan ? (
-              <div className="thinking-state"><LoaderCircle className="spin" size={17} /><span>Understanding your request…</span></div>
+              <div className="thinking-state"><LoaderCircle className="spin" size={17} /><span>{planning ? "Understanding your request…" : "Processing your recording…"}<small>{planning ? "This should only take a few seconds." : "Cleaning up your speech."}</small></span>{planning && <button onClick={cancelPlanning}>Cancel</button>}</div>
             ) : mode === "dictate" && result ? (
               <div className="dictation-card">
                 <div className="surface-head"><span className="kicker">CLEAN DICTATION</span><button onClick={resetOutput}><X size={15} /></button></div>
@@ -341,7 +360,7 @@ export function App() {
                 </div>
               </div>
             ) : error ? (
-              <div className="error-card"><span>{error}</span><button onClick={() => setError("")}><X size={14} /></button></div>
+              <div className="error-card"><span>{error}</span>{mode === "act" && draft.trim() && <button className="retry-action" onClick={() => void prepareCommand(draft.trim())}><RotateCcw size={13} /> Retry</button>}<button aria-label="Dismiss" onClick={() => setError("")}><X size={14} /></button></div>
             ) : null}
           </div>
         )}
