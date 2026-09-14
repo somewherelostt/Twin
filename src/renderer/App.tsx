@@ -356,7 +356,7 @@ export function App() {
                 {error && <div className="plan-error">{error}</div>}
                 <div className="surface-actions">
                   <button className="quiet-action" onClick={resetOutput}>Cancel</button>
-                  <button className="confirm-action" disabled={busy || !plan.ready} onClick={runAction}>{busy ? <><LoaderCircle className="spin" size={14} /> Running…</> : plan.ready ? <>Run action <ArrowRight size={14} /></> : <>Add details</>}</button>
+                  <button className="confirm-action" disabled={busy || !plan.ready || Boolean(error)} onClick={runAction}>{busy ? <><LoaderCircle className="spin" size={14} /> Running…</> : plan.ready ? <>Run action <ArrowRight size={14} /></> : <>Add details</>}</button>
                 </div>
               </div>
             ) : error ? (

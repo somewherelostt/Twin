@@ -56,6 +56,23 @@ function getOpenAI() {
   });
 }
 
+async function waitForConnectedApp<T>(request: Promise<T>, appNames: string, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${appNames} is taking longer than expected. Check the connected app before trying this action again.`)),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function getComposio() {
   if (!composio) {
     composio = new Composio({
@@ -129,16 +146,22 @@ function readPlan(value: unknown, command: string): ActionPlan {
     throw new Error("Twin could not verify the action details");
   }
 
+  const toolkits = [...new Set(data.toolkits)];
+  const missingDetails = data.missingDetails
+    .map((item) => item.trim())
+    .filter((item) => item && !/^(none|nothing|no missing details)\b/i.test(item))
+    .filter((item) => !(toolkits.includes("github") && /(public|private|permission|access|default branch|confirm.*branch|live fetch)/i.test(item)));
+
   return {
     id: randomUUID(),
     command,
     title: String(data.title).trim(),
     description: String(data.description).trim(),
-    toolkits: [...new Set(data.toolkits)],
+    toolkits,
     operation: String(data.operation).trim(),
     confirmation: String(data.confirmation).trim(),
-    ready: data.ready,
-    missingDetails: data.missingDetails.map((item) => item.trim()).filter(Boolean),
+    ready: data.ready || missingDetails.length === 0,
+    missingDetails,
   };
 }
 
@@ -200,7 +223,7 @@ export async function prepareAction(command: string, screenContext?: string, sig
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
     reasoning: { effort: "minimal" },
     instructions:
-      "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose every required toolkit from slack, jira, gmail, and github. Support workflows that move information between apps. Do not execute anything. Return JSON only with title, description, toolkits, operation, confirmation, ready, and missingDetails. Set ready to false when a required recipient, destination, repository, project, or content cannot be resolved from the request or screenshot, and list each missing item. Confirmation must clearly state every external effect. Never invent missing names or content.",
+      "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose every required toolkit from slack, jira, gmail, and github. Support workflows that move information between apps. Assume named apps use the user's already-connected account; do not ask whether a repository is public or private, whether the account has permission, or whether the user confirms access. Planning does not need to fetch app data. Data that will be retrieved during execution is not a missing detail. Set ready to true for a read request when its app and resource identifier are known. For GitHub reads, use the repository's default branch unless the user names another branch. A new GitHub issue requires a repository, title, and body. An issue or pull-request comment requires a repository, issue or pull-request number, and comment text. Do not execute anything. Return JSON only with title, description, toolkits, operation, confirmation, ready, and missingDetails. Set ready to false only when a genuinely required recipient, destination, repository, project, or content cannot be resolved from the request or screenshot, and list each missing item. Confirmation must clearly state every external effect. Never invent missing names or content.",
     input: [{
       role: "user",
       content: [
@@ -276,11 +299,18 @@ export async function executeAction(planId: string): Promise<ActionResult> {
   const tools = await session.tools();
   const client = getOpenAI();
   const model = process.env.OPENAI_MODEL || "gpt-5-mini";
+  const workflowDeadline = Date.now() + 90_000;
+  const openAIOptions = () => ({
+    signal: AbortSignal.timeout(Math.max(1, Math.min(30_000, workflowDeadline - Date.now()))),
+    maxRetries: 0,
+  });
 
   runtime.onProgress({ planId, message: "Choosing the right actions…", step: 0 });
   try {
     let response = await client.responses.create({
     model,
+    reasoning: { effort: "low" },
+    text: { verbosity: "low" },
     tools,
     instructions: [
       "You are Twin, a focused work assistant with access to Slack, Jira, Gmail, and GitHub through Composio.",
@@ -290,7 +320,7 @@ export async function executeAction(planId: string): Promise<ActionResult> {
       "After tool use, give a concise factual result suitable for showing in a desktop confirmation card.",
     ].join(" "),
     input: `Approved request:\n${plan.command}\n\nReviewed plan:\n${plan.title}\n${plan.description}\nExpected effect: ${plan.confirmation}`,
-  });
+  }, openAIOptions());
 
     let turns = 0;
     let failed = false;
@@ -308,14 +338,23 @@ export async function executeAction(planId: string): Promise<ActionResult> {
         });
       }
       runtime.onProgress({ planId, message: turns === 1 ? "Starting the workflow…" : "Continuing the workflow…", step: steps.length });
-      const results = await provider.handleToolCalls(session, response.output);
+      const remainingMs = workflowDeadline - Date.now();
+      if (remainingMs <= 0) throw new Error("The workflow took too long and was stopped. Check the connected apps before trying it again.");
+      const appNames = plan.toolkits.map(toolkitNames).join(" and ");
+      const results = await waitForConnectedApp(
+        provider.handleToolCalls(session, response.output),
+        appNames,
+        Math.min(45_000, remainingMs),
+      );
       failed ||= results.some((item) => item.status === "incomplete" || resultFailed(item.output));
       response = await client.responses.create({
         model,
+        reasoning: { effort: "low" },
+        text: { verbosity: "low" },
         tools,
         previous_response_id: response.id,
         input: results,
-      });
+      }, openAIOptions());
     }
 
     if (!steps.length) {
