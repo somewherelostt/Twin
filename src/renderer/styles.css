@@ -77,6 +77,13 @@ button { color: inherit; }
 .app-chips i.gmail, .connections i.gmail { background: #ffb7ad; }
 .plan-card h2, .complete-card h2 { margin: 0; font-size: 18px; line-height: 1.25; letter-spacing: -.025em; }
 .plan-card > p { margin: 8px 0 16px; color: #969991; font-size: 12px; line-height: 1.55; }
+.plan-draft { margin: 0 0 12px; overflow: hidden; border: 1px solid rgba(255,255,255,.07); border-radius: 10px; background: rgba(255,255,255,.025); }
+.plan-draft summary { min-height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; color: #c8cac4; cursor: pointer; list-style: none; font-size: 10px; font-weight: 600; }
+.plan-draft summary::-webkit-details-marker { display: none; }
+.plan-draft summary::after { content: "+"; margin-left: auto; color: #777a72; font: 13px "DM Mono", monospace; }
+.plan-draft[open] summary::after { content: "−"; }
+.plan-draft summary small { margin-left: 8px; margin-right: 10px; color: #666961; font: 8px "DM Mono", monospace; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+.plan-draft pre { max-height: 132px; margin: 0; padding: 11px 12px 12px; overflow: auto; color: #aeb1a9; border-top: 1px solid rgba(255,255,255,.06); font: 10px/1.55 "DM Mono", monospace; white-space: pre-wrap; }
 .operation-row { padding: 12px 13px; display: flex; align-items: flex-start; gap: 16px; border-top: 1px solid rgba(255,255,255,.07); border-bottom: 1px solid rgba(255,255,255,.07); }
 .operation-row span { color: #666961; font: 9px "DM Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
 .operation-row strong { color: #d6d8d1; font-size: 11px; line-height: 1.4; font-weight: 500; }

@@ -42,6 +42,7 @@ export interface ActionPlan {
   command: string;
   title: string;
   description: string;
+  draft: string;
   toolkits: Toolkit[];
   operation: string;
   confirmation: string;

@@ -145,22 +145,39 @@ function readPlan(value: unknown, command: string): ActionPlan {
   if (typeof data.ready !== "boolean" || !Array.isArray(data.missingDetails) || !data.missingDetails.every((item) => typeof item === "string")) {
     throw new Error("Twin could not verify the action details");
   }
+  if (typeof data.draft !== "string") throw new Error("Twin could not prepare the action content");
 
   const toolkits = [...new Set(data.toolkits)];
+  const draft = data.draft.trim();
   const missingDetails = data.missingDetails
     .map((item) => item.trim())
     .filter((item) => item && !/^(none|nothing|no missing details)\b/i.test(item))
-    .filter((item) => !(toolkits.includes("github") && /(public|private|permission|access|default branch|confirm.*branch|live fetch)/i.test(item)));
+    .filter((item) => !(toolkits.includes("github") && /(public|private|permission|access|default branch|confirm.*branch|live fetch)/i.test(item)))
+    .filter((item) => !(draft && toolkits.includes("gmail") && /(subject|body|email content|wording|tone|signature|greeting|details to include)/i.test(item)))
+    .filter((item) => !(draft && toolkits.includes("slack") && /(message content|message wording|copy|tone|details to include)/i.test(item)))
+    .filter((item) => !(draft && toolkits.includes("jira") && /(summary|title|description|issue content|acceptance criteria|priority)/i.test(item)))
+    .filter((item) => !(draft && toolkits.includes("github") && /(issue title|issue body|comment text|description|wording|tone)/i.test(item)));
+
+  const isEmailWrite = toolkits.includes("gmail") && /(send|draft|compose|write)/i.test(String(data.operation));
+  const emailPurpose = command
+    .replace(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi, " ")
+    .replace(/\b(?:please|email|mail|gmail|send|draft|compose|write|an?|the|to)\b/gi, " ")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .trim();
+  if (isEmailWrite && !emailPurpose && !missingDetails.some((item) => /(about|purpose|content|say)/i.test(item))) {
+    missingDetails.push("What the email should be about");
+  }
 
   return {
     id: randomUUID(),
     command,
     title: String(data.title).trim(),
     description: String(data.description).trim(),
+    draft,
     toolkits,
     operation: String(data.operation).trim(),
     confirmation: String(data.confirmation).trim(),
-    ready: data.ready || missingDetails.length === 0,
+    ready: missingDetails.length === 0,
     missingDetails,
   };
 }
@@ -222,8 +239,17 @@ export async function prepareAction(command: string, screenContext?: string, sig
     response = await getOpenAI().responses.create({
     model: process.env.OPENAI_MODEL || "gpt-5-mini",
     reasoning: { effort: "minimal" },
-    instructions:
-      "You turn a spoken work request into a short review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here. Choose every required toolkit from slack, jira, gmail, and github. Support workflows that move information between apps. Assume named apps use the user's already-connected account; do not ask whether a repository is public or private, whether the account has permission, or whether the user confirms access. Planning does not need to fetch app data. Data that will be retrieved during execution is not a missing detail. Set ready to true for a read request when its app and resource identifier are known. For GitHub reads, use the repository's default branch unless the user names another branch. A new GitHub issue requires a repository, title, and body. An issue or pull-request comment requires a repository, issue or pull-request number, and comment text. Do not execute anything. Return JSON only with title, description, toolkits, operation, confirmation, ready, and missingDetails. Set ready to false only when a genuinely required recipient, destination, repository, project, or content cannot be resolved from the request or screenshot, and list each missing item. Confirmation must clearly state every external effect. Never invent missing names or content.",
+    instructions: [
+      "You turn a spoken work request into a concise review card. You may receive a screenshot of the app that was active when the user invoked Twin; use visible text to resolve words such as this, that, it, or here.",
+      "Choose every required toolkit from slack, jira, gmail, and github. Support workflows that move information between apps.",
+      "Draft routine written content yourself from the user's purpose and visible context. Use a concise, neutral, professional tone. Never ask the user to supply exact wording, a subject, body, title, summary, description, greeting, signature, tone, priority, acceptance criteria, or message copy when the underlying purpose is clear. Never use unresolved placeholders or bracketed template text; omit a sender name or optional field when it is unknown.",
+      "For Gmail, when the recipient and purpose are known, create a useful subject and complete email body. Do not invent factual updates; if the user is asking someone for an update, write a clear request for that update.",
+      "For Slack, draft the message when its destination and purpose are known. For Jira, draft the summary and description when the project and purpose are known. For a new GitHub issue, draft the title and body when the repository and purpose are known. For a GitHub comment, draft the comment when the repository, issue or pull-request number, and purpose are known.",
+      "Put the exact content that will be written in draft. Include labels such as Subject and Body when useful. For actions that do not write content, return an empty draft string. Keep description to one short summary sentence.",
+      "Set ready to false only when a required external identifier or the core purpose cannot be resolved: for example a missing email recipient, Slack destination, Jira project, GitHub repository, issue number, pull-request number, or a request with no discernible intent. An email request containing only a recipient has no core purpose and must remain unready. Optional preferences never block an action.",
+      "Assume named apps use the user's already-connected account. Do not ask whether a repository is public or private, whether the account has permission, or whether the user confirms access. Planning does not need to fetch app data, and data retrieved during execution is not a missing detail. For GitHub reads, use the repository's default branch unless the user names another branch.",
+      "Do not execute anything. Return JSON only with title, description, draft, toolkits, operation, confirmation, ready, and missingDetails. Confirmation must clearly state every external effect. Never invent recipients, destinations, repositories, projects, identifiers, or factual claims.",
+    ].join(" "),
     input: [{
       role: "user",
       content: [
@@ -243,13 +269,14 @@ export async function prepareAction(command: string, screenContext?: string, sig
           properties: {
             title: { type: "string" },
             description: { type: "string" },
+            draft: { type: "string" },
             toolkits: { type: "array", items: { type: "string", enum: [...TOOLKITS] }, minItems: 1 },
             operation: { type: "string" },
             confirmation: { type: "string" },
             ready: { type: "boolean" },
             missingDetails: { type: "array", items: { type: "string" } },
           },
-          required: ["title", "description", "toolkits", "operation", "confirmation", "ready", "missingDetails"],
+          required: ["title", "description", "draft", "toolkits", "operation", "confirmation", "ready", "missingDetails"],
         },
       },
     },
@@ -316,10 +343,11 @@ export async function executeAction(planId: string): Promise<ActionResult> {
       "You are Twin, a focused work assistant with access to Slack, Jira, Gmail, and GitHub through Composio.",
       "Execute exactly the approved request. Do not expand its scope, delete data, or perform additional actions.",
       "Use the relevant connected app tools. If a required detail or connection is missing, explain it without guessing.",
+      "Draft routine written content from the approved intent using a concise, neutral, professional tone. When a recipient and purpose are known, do not ask for optional wording, subject, body, greeting, signature, tone, or formatting preferences. Preserve any exact draft shown in the reviewed plan. Never add unresolved placeholders or bracketed template text; omit unknown optional fields.",
       `The approved toolkits are: ${plan.toolkits.join(", ")}. Do not use any other app.`,
       "After tool use, give a concise factual result suitable for showing in a desktop confirmation card.",
     ].join(" "),
-    input: `Approved request:\n${plan.command}\n\nReviewed plan:\n${plan.title}\n${plan.description}\nExpected effect: ${plan.confirmation}`,
+    input: `Approved request:\n${plan.command}\n\nReviewed plan:\n${plan.title}\n${plan.description}\n\nApproved draft:\n${plan.draft || "No written content is required."}\n\nExpected effect: ${plan.confirmation}`,
   }, openAIOptions());
 
     let turns = 0;

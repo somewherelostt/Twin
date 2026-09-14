@@ -350,6 +350,7 @@ export function App() {
                 <div className="app-chips">{plan.toolkits.map((toolkit) => <span key={toolkit}><i className={toolkit}>{toolkitNames[toolkit][0]}</i>{toolkitNames[toolkit]}</span>)}</div>
                 <h2>{plan.title}</h2>
                 <p>{plan.description}</p>
+                {plan.draft && <details className="plan-draft"><summary><span>Review draft</span><small>Written by Twin</small></summary><pre>{plan.draft}</pre></details>}
                 <div className="operation-row"><span>Action</span><strong>{plan.operation}</strong></div>
                 {!plan.ready && <div className="missing-details"><AlertCircle size={14} /><span><strong>More detail needed</strong>{plan.missingDetails.join(" · ")}</span></div>}
                 {busy && <div className="execution-status"><LoaderCircle className="spin" size={13} />{executionMessage || "Running the workflow…"}</div>}

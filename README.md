@@ -65,7 +65,7 @@ People naturally say “this issue,” “reply to that,” and “send it to th
 
 ### Intent is compiled before it is executed
 
-Twin converts model output into a validated plan before any connected app becomes available. OpenAI must return a strict JSON object with a title, description, selected toolkits, operation, confirmation, readiness state, and missing details. Twin validates that contract and stores the resulting plan in the Electron main process.
+Twin converts model output into a validated plan before any connected app becomes available. OpenAI must return a strict JSON object with a title, description, exact content draft, selected toolkits, operation, confirmation, readiness state, and missing details. Twin validates that contract and stores the resulting plan in the Electron main process.
 
 The renderer receives a plan ID for review. When the user approves it, the renderer can request execution of that stored plan; it cannot submit an arbitrary tool payload. This creates a clear boundary between **understanding**, **review**, and **execution**.
 
