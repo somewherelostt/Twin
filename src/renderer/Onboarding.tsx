@@ -1,33 +1,11 @@
 import type { FormEvent } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  GitPullRequest,
-  GripHorizontal,
-  KeyRound,
-  LoaderCircle,
-  LockKeyhole,
-  Mail,
-  MessageSquare,
-  Plug,
-  Sparkles,
-  TicketCheck,
-  WandSparkles,
-} from "lucide-react";
-import type {
-  AppStatus,
-  CredentialInput,
-  Toolkit,
-  ToolkitConnection,
-} from "../shared/contracts";
+import type { AppStatus, CredentialInput, Toolkit, ToolkitConnection } from "../shared/contracts";
 
-const appDetails: Record<Toolkit, { name: string; description: string; icon: typeof GitPullRequest }> = {
-  slack: { name: "Slack", description: "Send messages and follow up", icon: MessageSquare },
-  jira: { name: "Jira", description: "Create and update issues", icon: TicketCheck },
-  gmail: { name: "Gmail", description: "Draft and send email", icon: Mail },
-  github: { name: "GitHub", description: "Work with issues and pull requests", icon: GitPullRequest },
+const appDetails: Record<Toolkit, { name: string; description: string; initials: string }> = {
+  slack: { name: "Slack", description: "Send messages and follow up", initials: "SL" },
+  jira: { name: "Jira", description: "Create and update issues", initials: "JI" },
+  gmail: { name: "Gmail", description: "Draft and send email", initials: "GM" },
+  github: { name: "GitHub", description: "Work with issues and pull requests", initials: "GH" },
 };
 
 type CredentialDraft = Required<CredentialInput>;
@@ -47,35 +25,29 @@ type OnboardingProps = {
   onFinish(): void;
 };
 
-function StepProgress({ step }: { step: number }) {
-  const labels = ["Welcome", "Services", "Work apps"];
-  return (
-    <nav className="onboarding-progress" aria-label="Setup progress">
-      <span className="progress-count">0{step + 1}<i>/03</i></span>
-      <div className="progress-track" aria-hidden="true">
-        {labels.map((label, index) => <i key={label} className={index <= step ? "active" : ""} />)}
-      </div>
-      <span className="progress-label">{labels[step]}</span>
-    </nav>
-  );
-}
+const steps = ["Welcome", "API keys", "Work apps"];
 
-function OnboardingAside({ step }: { step: number }) {
+function SetupSidebar({ step, shortcut }: { step: number; shortcut?: string }) {
   return (
-    <aside className="onboarding-aside">
-      <div className="onboarding-brand"><img src="./twin-mark.svg" alt="Twin" /><span>Twin</span></div>
-      <div className="signal-scene" aria-hidden="true">
-        <div className="signal-orbit orbit-one" />
-        <div className="signal-orbit orbit-two" />
-        <div className="signal-core"><WandSparkles size={24} /></div>
-        <div className="signal-wave">{Array.from({ length: 13 }, (_, index) => <i key={index} style={{ animationDelay: `${index * 70}ms` }} />)}</div>
+    <aside className="setup-sidebar">
+      <div className="setup-brand">
+        <img src="./twin-mark.svg" alt="" />
+        <span>Twin</span>
       </div>
-      <div className="aside-copy">
-        <span className="eyebrow">VOICE TO ACTION</span>
-        <h2>{step === 0 ? "Speak once.\nKeep moving." : step === 1 ? "Your keys stay\non this device." : "One voice.\nFour workspaces."}</h2>
-        <p>{step === 0 ? "Twin turns natural speech into polished writing and real work across your apps." : step === 1 ? "Credentials are encrypted with your operating system before they are stored." : "Choose where Twin can act. You remain in control before anything is sent."}</p>
+
+      <ol className="setup-steps" aria-label="Setup progress">
+        {steps.map((label, index) => (
+          <li key={label} className={index === step ? "current" : index < step ? "complete" : ""}>
+            <span>{index < step ? "✓" : index + 1}</span>
+            <strong>{label}</strong>
+          </li>
+        ))}
+      </ol>
+
+      <div className="setup-shortcut">
+        <span>Open Twin anytime</span>
+        <kbd>{(shortcut ?? "Alt+Space").replace("CommandOrControl", "Ctrl").replaceAll("+", " + ")}</kbd>
       </div>
-      <div className="privacy-note"><LockKeyhole size={13} /><span>Encrypted locally</span></div>
     </aside>
   );
 }
@@ -95,98 +67,103 @@ export function Onboarding({
   onFinish,
 }: OnboardingProps) {
   const serviceReady = {
-    assemblyAI: Boolean(status?.configured.assemblyAI || credentialInput.assemblyAI?.trim()),
-    openAI: Boolean(status?.configured.openAI || credentialInput.openAI?.trim()),
-    composio: Boolean(status?.configured.composio || credentialInput.composio?.trim()),
+    assemblyAI: Boolean(status?.configured.assemblyAI || credentialInput.assemblyAI.trim()),
+    openAI: Boolean(status?.configured.openAI || credentialInput.openAI.trim()),
+    composio: Boolean(status?.configured.composio || credentialInput.composio.trim()),
   };
   const allServicesReady = Object.values(serviceReady).every(Boolean);
-  const connectedCount = connections.filter((connection) => connection.connected).length;
 
   return (
     <section className="onboarding-shell">
-      <div className="onboarding-dragbar" title="Drag Twin" aria-label="Drag Twin"><GripHorizontal size={16} /></div>
-      <OnboardingAside step={step} />
-      <main className="onboarding-main">
-        <StepProgress step={step} />
+      <div className="onboarding-titlebar" aria-hidden="true" />
+      <SetupSidebar step={step} shortcut={status?.shortcut} />
 
-        {step === 0 && (
-          <div className="onboarding-content welcome-content onboarding-enter">
-            <span className="eyebrow">SET UP IN TWO MINUTES</span>
-            <h1>Meet the fastest way to work with your voice.</h1>
-            <p className="lead">Dictate clean text anywhere, or ask Twin to handle work across the apps you already use.</p>
-            <div className="command-preview">
-              <div className="preview-orb"><img src="./twin-mark.svg" alt="" /></div>
-              <div><span>Try saying</span><strong>“Tell the team I pushed the login fix.”</strong></div>
-              <div className="preview-bars">{Array.from({ length: 5 }, (_, index) => <i key={index} />)}</div>
-            </div>
-            <div className="value-row">
-              <span><Check size={13} /> Clean dictation</span>
-              <span><Check size={13} /> App actions</span>
-              <span><Check size={13} /> Your approval first</span>
-            </div>
-            <button type="button" className="onboarding-primary" onClick={() => onStepChange(1)}>Start setup <ArrowRight size={16} /></button>
-          </div>
-        )}
+      <main className="setup-main">
+        <div className="setup-page" key={step}>
+          {step === 0 && (
+            <>
+              <p className="setup-kicker">GET STARTED</p>
+              <h1>Set up Twin.</h1>
+              <p className="setup-lead">Use your voice to write in any app or take action across your work tools.</p>
 
-        {step === 1 && (
-          <form className="onboarding-content onboarding-enter" onSubmit={onSaveCredentials}>
-            <span className="eyebrow">CORE SERVICES</span>
-            <h1>Connect the engine.</h1>
-            <p className="lead compact-lead">Add each key once. Twin encrypts and remembers them on this computer.</p>
-            <div className="service-list">
-              <label className={serviceReady.assemblyAI ? "service-card ready" : "service-card"}>
-                <span className="service-icon assembly"><Sparkles size={17} /></span>
-                <span className="service-copy"><strong>AssemblyAI</strong><small>Voice transcription</small></span>
-                <span className="service-status">{serviceReady.assemblyAI ? <><CheckCircle2 size={13} /> Ready</> : "Required"}</span>
-                <input type="password" aria-label="AssemblyAI API key" placeholder={status?.configured.assemblyAI ? "Configured securely" : "Paste API key"} value={credentialInput.assemblyAI ?? ""} onChange={(event) => onCredentialChange({ ...credentialInput, assemblyAI: event.target.value })} />
-              </label>
-              <label className={serviceReady.openAI ? "service-card ready" : "service-card"}>
-                <span className="service-icon openai"><WandSparkles size={17} /></span>
-                <span className="service-copy"><strong>OpenAI</strong><small>Intent and action planning</small></span>
-                <span className="service-status">{serviceReady.openAI ? <><CheckCircle2 size={13} /> Ready</> : "Required"}</span>
-                <input type="password" aria-label="OpenAI API key" placeholder={status?.configured.openAI ? "Configured securely" : "Paste API key"} value={credentialInput.openAI ?? ""} onChange={(event) => onCredentialChange({ ...credentialInput, openAI: event.target.value })} />
-              </label>
-              <label className={serviceReady.composio ? "service-card ready" : "service-card"}>
-                <span className="service-icon composio"><Plug size={17} /></span>
-                <span className="service-copy"><strong>Composio</strong><small>Secure app connections</small></span>
-                <span className="service-status">{serviceReady.composio ? <><CheckCircle2 size={13} /> Ready</> : "Required"}</span>
-                <input type="password" aria-label="Composio API key" placeholder={status?.configured.composio ? "Configured securely" : "Paste API key"} value={credentialInput.composio ?? ""} onChange={(event) => onCredentialChange({ ...credentialInput, composio: event.target.value })} />
-              </label>
-            </div>
-            {error && <div className="onboarding-error">{error}</div>}
-            <div className="onboarding-footer">
-              <button type="button" className="onboarding-back" onClick={() => onStepChange(0)}><ArrowLeft size={15} /> Back</button>
-              <button className="onboarding-primary" disabled={busy || !allServicesReady}>{busy ? <LoaderCircle className="spin" size={15} /> : <KeyRound size={15} />} Save and continue</button>
-            </div>
-          </form>
-        )}
+              <div className="setup-example">
+                <span>TRY SAYING</span>
+                <p>“Tell the team I pushed the login fix.”</p>
+              </div>
 
-        {step === 2 && (
-          <div className="onboarding-content onboarding-enter">
-            <span className="eyebrow">WORK APPS</span>
-            <h1>Choose where Twin works.</h1>
-            <p className="lead compact-lead">Connect now or return from Settings later. Twin always shows the action before it runs.</p>
-            <div className="app-connect-grid">
-              {connections.map((connection) => {
-                const detail = appDetails[connection.slug];
-                const Icon = detail.icon;
-                return (
-                  <button type="button" key={connection.slug} className={connection.connected ? "app-connect-card connected" : "app-connect-card"} disabled={connecting !== null || connection.connected} onClick={() => onConnect(connection.slug)}>
-                    <span className={`app-connect-icon ${connection.slug}`}><Icon size={19} /></span>
-                    <span><strong>{detail.name}</strong><small>{connection.connected ? "Connected and ready" : detail.description}</small></span>
-                    <span className="connect-action">{connection.connected ? <CheckCircle2 size={17} /> : connecting === connection.slug ? <LoaderCircle className="spin" size={16} /> : "Connect"}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="connection-summary"><span>{connectedCount} of 4 connected</span><i><b style={{ width: `${connectedCount * 25}%` }} /></i></div>
-            {error && <div className="onboarding-error">{error}</div>}
-            <div className="onboarding-footer">
-              <button type="button" className="onboarding-back" onClick={() => onStepChange(1)}><ArrowLeft size={15} /> Back</button>
-              <button type="button" className="onboarding-primary" disabled={busy} onClick={onFinish}>{busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />} Finish setup</button>
-            </div>
-          </div>
-        )}
+              <ul className="setup-benefits">
+                <li><i>01</i><span><strong>Dictate anywhere</strong><small>Turn speech into clean text in the app you are using.</small></span></li>
+                <li><i>02</i><span><strong>Take action</strong><small>Draft messages, create issues, and handle routine work.</small></span></li>
+                <li><i>03</i><span><strong>Stay in control</strong><small>Review actions before Twin runs them.</small></span></li>
+              </ul>
+
+              <div className="setup-actions end">
+                <button type="button" className="setup-primary" onClick={() => onStepChange(1)}>Continue</button>
+              </div>
+            </>
+          )}
+
+          {step === 1 && (
+            <form className="setup-form" onSubmit={onSaveCredentials}>
+              <p className="setup-kicker">API KEYS</p>
+              <h1>Connect the services.</h1>
+              <p className="setup-lead">Add each key once. Twin encrypts and stores it on this computer.</p>
+
+              <div className="credential-list">
+                <label>
+                  <span><strong>AssemblyAI</strong><small>Voice transcription</small></span>
+                  <b className={serviceReady.assemblyAI ? "ready" : ""}>{serviceReady.assemblyAI ? "Ready" : "Required"}</b>
+                  <input type="password" aria-label="AssemblyAI API key" placeholder={status?.configured.assemblyAI ? "Configured securely" : "Paste API key"} value={credentialInput.assemblyAI} onChange={(event) => onCredentialChange({ ...credentialInput, assemblyAI: event.target.value })} />
+                </label>
+                <label>
+                  <span><strong>OpenAI</strong><small>Intent and action planning</small></span>
+                  <b className={serviceReady.openAI ? "ready" : ""}>{serviceReady.openAI ? "Ready" : "Required"}</b>
+                  <input type="password" aria-label="OpenAI API key" placeholder={status?.configured.openAI ? "Configured securely" : "Paste API key"} value={credentialInput.openAI} onChange={(event) => onCredentialChange({ ...credentialInput, openAI: event.target.value })} />
+                </label>
+                <label>
+                  <span><strong>Composio</strong><small>Connections to your work apps</small></span>
+                  <b className={serviceReady.composio ? "ready" : ""}>{serviceReady.composio ? "Ready" : "Required"}</b>
+                  <input type="password" aria-label="Composio API key" placeholder={status?.configured.composio ? "Configured securely" : "Paste API key"} value={credentialInput.composio} onChange={(event) => onCredentialChange({ ...credentialInput, composio: event.target.value })} />
+                </label>
+              </div>
+
+              {error && <div className="setup-error">{error}</div>}
+              <div className="setup-actions">
+                <button type="button" className="setup-secondary" onClick={() => onStepChange(0)}>Back</button>
+                <button type="submit" className="setup-primary" disabled={busy || !allServicesReady}>{busy ? "Saving…" : "Save and continue"}</button>
+              </div>
+            </form>
+          )}
+
+          {step === 2 && (
+            <>
+              <p className="setup-kicker">WORK APPS</p>
+              <h1>Connect your tools.</h1>
+              <p className="setup-lead">This step is optional. You can connect or change apps later in Settings.</p>
+
+              <div className="work-app-list">
+                {connections.map((connection) => {
+                  const detail = appDetails[connection.slug];
+                  return (
+                    <div className="work-app-row" key={connection.slug}>
+                      <span className={`work-app-mark ${connection.slug}`}>{detail.initials}</span>
+                      <span className="work-app-copy"><strong>{detail.name}</strong><small>{detail.description}</small></span>
+                      <button type="button" disabled={connecting !== null || connection.connected} onClick={() => onConnect(connection.slug)}>
+                        {connection.connected ? "Connected" : connecting === connection.slug ? "Opening…" : "Connect"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {error && <div className="setup-error">{error}</div>}
+              <div className="setup-actions">
+                <button type="button" className="setup-secondary" onClick={() => onStepChange(1)}>Back</button>
+                <button type="button" className="setup-primary" disabled={busy} onClick={onFinish}>{busy ? "Finishing…" : "Finish setup"}</button>
+              </div>
+            </>
+          )}
+        </div>
       </main>
     </section>
   );
