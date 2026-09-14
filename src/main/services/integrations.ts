@@ -216,7 +216,7 @@ export async function prepareAction(command: string, screenContext?: string): Pr
           properties: {
             title: { type: "string" },
             description: { type: "string" },
-            toolkits: { type: "array", items: { type: "string", enum: [...TOOLKITS] }, minItems: 1, uniqueItems: true },
+            toolkits: { type: "array", items: { type: "string", enum: [...TOOLKITS] }, minItems: 1 },
             operation: { type: "string" },
             confirmation: { type: "string" },
             ready: { type: "boolean" },
