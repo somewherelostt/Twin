@@ -66,6 +66,7 @@ export function App() {
   const [credentialInput, setCredentialInput] = useState({ assemblyAI: "", openAI: "", composio: "" });
   const inputRef = useRef<HTMLInputElement>(null);
   const planningRequestRef = useRef(0);
+  const overlayHeightRef = useRef(0);
   const recorder = useAudioRecorder();
 
   function updateMousePassthrough(target: EventTarget | null) {
@@ -107,20 +108,19 @@ export function App() {
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const elements = Array.from(document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .onboarding-shell, .drag-handle, .mode-popover"));
-        const rects = elements.filter((element) => element.offsetParent !== null).map((element) => element.getBoundingClientRect());
-        if (rects.length === 0) return;
-        const top = Math.min(...rects.map((rect) => rect.top));
-        const bottom = Math.max(...rects.map((rect) => rect.bottom));
+        const stack = document.querySelector<HTMLElement>(".float-stack");
         const panel = document.querySelector<HTMLElement>(".settings-panel");
-        const measuredHeight = bottom - top + 2;
-        const panelOffset = panel?.closest(".onboarding-backdrop") ? 2 : 69;
-        const settingsHeight = panel ? panel.scrollHeight + panelOffset : 0;
-        void window.twin.setOverlayHeight(Math.ceil(Math.max(measuredHeight, settingsHeight)));
+        if (!stack && !panel) return;
+        const stackHeight = stack ? stack.offsetHeight + 14 : 0;
+        const settingsHeight = panel ? panel.scrollHeight + 69 : 0;
+        const nextHeight = Math.ceil(Math.max(stackHeight, settingsHeight));
+        if (Math.abs(nextHeight - overlayHeightRef.current) < 3) return;
+        overlayHeightRef.current = nextHeight;
+        void window.twin.setOverlayHeight(nextHeight);
       });
     };
     const observer = new ResizeObserver(measure);
-    document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel, .onboarding-shell, .mode-popover").forEach((element) => observer.observe(element));
+    document.querySelectorAll<HTMLElement>(".float-stack, .settings-panel").forEach((element) => observer.observe(element));
     measure();
     return () => {
       cancelAnimationFrame(frame);

@@ -18,10 +18,11 @@ button { color: inherit; }
 
 .composer, .content-surface, .mode-popover, .settings-panel {
   border: 1px solid rgba(255,255,255,.11);
-  background: rgba(17,18,16,.94);
+  background: rgba(17,18,16,.98);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 1px 1px rgba(0,0,0,.18);
-  backdrop-filter: blur(28px) saturate(125%);
+  contain: paint;
 }
+.settings-panel { backdrop-filter: blur(20px) saturate(115%); }
 
 .composer { position: relative; height: 58px; display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 19px; -webkit-app-region: drag; }
 .composer.recording { border-color: rgba(217,255,87,.38); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 0 0 1px rgba(217,255,87,.08), 0 22px 50px rgba(0,0,0,.4); }
@@ -40,17 +41,19 @@ button { color: inherit; }
 .mic-button, .send-button, .settings-button { width: 36px; height: 36px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 11px; background: transparent; cursor: pointer; }
 .mic-button { color: #c5c7c0; }
 .mic-button:hover, .settings-button:hover { color: #fff; background: rgba(255,255,255,.07); }
-.composer.recording .mic-button { color: #11120f; background: #d7ff4e; animation: mic-pulse 1.4s ease-in-out infinite; }
+.composer.recording .mic-button { position: relative; color: #11120f; background: #d7ff4e; }
+.composer.recording .mic-button::after { position: absolute; inset: -4px; content: ""; border: 1px solid rgba(215,255,78,.42); border-radius: 14px; animation: mic-pulse 1.4s cubic-bezier(.37,0,.63,1) infinite; pointer-events: none; }
 .send-button { color: #11120f; background: #d7ff4e; }
 .settings-button { color: #676a63; }
 
 .content-surface { overflow: hidden; border-radius: 23px; transform-origin: bottom center; }
-.surface-enter { animation: surface-in 260ms cubic-bezier(.22,1,.36,1) both; }
+.surface-enter { animation: surface-in 180ms cubic-bezier(.23,1,.32,1) both; }
+.content-surface.surface-enter { animation: content-fade 120ms ease-out both; }
 .listening-state { min-height: 112px; display: flex; align-items: center; gap: 20px; padding: 22px 25px; }
 .listening-state p { margin: 5px 0 0; color: #a4a79f; font-size: 14px; }
 .kicker { color: #d7ff4e; font: 500 9px "DM Mono", monospace; letter-spacing: .14em; }
 .wave { height: 38px; display: flex; align-items: center; gap: 3px; }
-.wave i { width: 2px; border-radius: 10px; background: #d7ff4e; animation: wave 820ms ease-in-out infinite alternate; }
+.wave i { width: 2px; border-radius: 10px; background: #d7ff4e; transform-origin: center; will-change: transform, opacity; animation: wave 720ms cubic-bezier(.37,0,.63,1) infinite alternate; }
 .thinking-state { min-height: 82px; display: flex; align-items: center; gap: 11px; padding: 0 24px; color: #b9bcb4; font-size: 13px; }
 .thinking-state svg { color: #d7ff4e; }
 .thinking-state > span { min-width: 0; flex: 1; }
@@ -207,8 +210,9 @@ button { color: inherit; }
 .spin { animation: spin 900ms linear infinite; }
 
 @keyframes surface-in { from { opacity: 0; transform: translateY(12px) scale(.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes content-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes wave { 0% { transform: scaleY(.35); opacity: .5; } 100% { transform: scaleY(1); opacity: 1; } }
-@keyframes mic-pulse { 50% { box-shadow: 0 0 0 7px rgba(215,255,78,.09); } }
+@keyframes mic-pulse { 0%, 100% { opacity: .2; transform: scale(.92); } 50% { opacity: .7; transform: scale(1); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes setup-page-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 
